@@ -75,62 +75,10 @@ const HandwritingCanvas = forwardRef(function HandwritingCanvas({ onSubmit, disa
     setHasStroke(false)
   }
 
-  /**
-   * 正規化與簡化筆劃：
-   * 1. 找出所有筆劃的 Bounding Box
-   * 2. 縮放並置中至 1024x1024 空間
-   * 3. 去除過於接近重複的點 (雜訊過濾)
-   */
-  function normalizeAndSimplifyStrokes(rawStrokes) {
-    if (!rawStrokes || rawStrokes.length === 0) return []
-
-    // 1. 尋找 Bounding Box
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
-    rawStrokes.forEach(stroke => {
-      stroke.forEach(([x, y]) => {
-        if (x < minX) minX = x
-        if (y < minY) minY = y
-        if (x > maxX) maxX = x
-        if (y > maxY) maxY = y
-      })
-    })
-
-    const width  = maxX - minX
-    const height = maxY - minY
-    const size   = Math.max(width, height, 1) // 避免除以 0
-    
-    // 計算縮放比例 (留一點 margins，縮放到 1024 的 90%)
-    const margin = 50
-    const scale  = (LOOKUP_TARGET_SIZE - margin * 2) / size
-    
-    // 計算置中位移
-    const offsetX = (LOOKUP_TARGET_SIZE - width * scale) / 2
-    const offsetY = (LOOKUP_TARGET_SIZE - height * scale) / 2
-
-    // 2. 轉換坐標 + 3. 簡化點 (距離小於 2 則跳過)
-    return rawStrokes.map(stroke => {
-      const simplified = []
-      stroke.forEach(([rawX, rawY]) => {
-        const nx = (rawX - minX) * scale + offsetX
-        const ny = (rawY - minY) * scale + offsetY
-        
-        if (simplified.length === 0) {
-          simplified.push([nx, ny])
-        } else {
-          const [lastX, lastY] = simplified[simplified.length - 1]
-          const dist = Math.sqrt(Math.pow(nx - lastX, 2) + Math.pow(ny - lastY, 2))
-          if (dist > 2) { // 簡化門檻：2 單位 (在 1024 空間下)
-            simplified.push([nx, ny])
-          }
-        }
-      })
-      return simplified
-    }).filter(s => s.length > 0)
-  }
-
   function submit() {
-    const processed = normalizeAndSimplifyStrokes(strokesRef.current)
-    onSubmit(processed)
+    // 移除不必要的縮放置中邏輯，保留最少量的雜訊過濾 (如果需要的話)，這裡直接使用原始畫布(320x320)的座標
+    // Google API 對於位置與大小的寬容度非常高，直接送原始座標有助於保留書寫特徵
+    onSubmit([...strokesRef.current])
   }
 
   return (

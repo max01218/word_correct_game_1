@@ -29,22 +29,19 @@ export default function GameBoard({ unit, onBack, onComplete }) {
       .catch((err) => setFeedback(`辨識引擎載入失敗：${err.message}`))
   }, [])
 
-  function handleSubmit(strokes) {
-    if (!lookupReady) {
-      setFeedback('辨識引擎載入中，請稍候…')
-      return
-    }
+  async function handleSubmit(strokes) {
     if (!strokes || strokes.length === 0) {
       setFeedback('請先畫出字再送出')
       return
     }
 
     setStatus('checking')
-    setFeedback('辨識中…')
+    setFeedback('辨識中，請稍候…')
     setShowHint(false)
 
     try {
-      const candidates = recognizeFromStrokes(strokes)
+      // 等待 Google API 回傳 (傳入原始畫布尺寸 320x320)
+      const candidates = await recognizeFromStrokes(strokes, 320, 320)
       const expected   = word.characters[charIndex]
 
       // 使用 Top 3 匹配
@@ -63,7 +60,7 @@ export default function GameBoard({ unit, onBack, onComplete }) {
         )
         
         if (newAttempts >= HINT_AFTER) setShowHint(true)
-        setTimeout(() => { setStatus('idle'); setFeedback('') }, 2000)
+        setTimeout(() => { setStatus('idle'); setFeedback('') }, 3000)
       }
     } catch (err) {
       setStatus('wrong')
@@ -147,10 +144,6 @@ export default function GameBoard({ unit, onBack, onComplete }) {
         <div className="progress-bar-fill" style={{ width: `${(wordIndex / totalWords) * 100}%` }} />
       </div>
 
-      {!lookupReady && (
-        <div className="feedback checking">辨識引擎載入中…</div>
-      )}
-
       <QuestionDisplay
         word={word}
         activeCharIndex={charIndex}
@@ -171,7 +164,7 @@ export default function GameBoard({ unit, onBack, onComplete }) {
       <HandwritingCanvas
         ref={canvasRef}
         onSubmit={handleSubmit}
-        disabled={disabled || !lookupReady}
+        disabled={disabled}
       />
 
       <p className="canvas-tip">在上方區域手寫漢字，完成後點「確認送出」</p>
