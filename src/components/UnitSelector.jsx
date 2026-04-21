@@ -3,7 +3,7 @@ export default function UnitSelector({ units, completedUnits, onSelect, onSeed, 
     <div className="unit-selector">
       <div className="selector-header">
         <h1>字音字形練習</h1>
-        <p>國中二年級 ｜ 已匯入的單元題庫</p>
+        <p>已匯入的單元題庫</p>
         {isTeacher && units.length === 0 && (
           <button className="btn-submit" onClick={onSeed}>這是一個全新的資料庫！請點此載入預設考題</button>
         )}
