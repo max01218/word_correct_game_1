@@ -1,8 +1,9 @@
 import React from 'react';
+import StrokeSVG from './StrokeSVG';
 
 const TONES = ['ˊ', 'ˇ', 'ˋ', '˙'];
 
-function RubyGridBox({ char, zhuyin }) {
+function RubyGridBox({ char, zhuyin, strokes }) {
   let symbols = [];
   let tone = '';
   
@@ -12,7 +13,6 @@ function RubyGridBox({ char, zhuyin }) {
       if (TONES.includes(c)) {
         tone = c;
       } else {
-        // Some zhuyin may contain spaces, we can filter them out
         if (c.trim() !== '') {
           symbols.push(c);
         }
@@ -25,12 +25,16 @@ function RubyGridBox({ char, zhuyin }) {
   return (
     <div className="ruby-grid-box">
       <div className="ruby-char-col">
-        {/* Background grid lines for the Chinese character */}
         <div className="char-grid-lines">
           <div className="grid-line-h"></div>
           <div className="grid-line-v"></div>
         </div>
-        <div className="char-text">{char}</div>
+        
+        {strokes && strokes.length > 0 ? (
+          <StrokeSVG strokes={strokes} />
+        ) : (
+          <div className="char-text">{char}</div>
+        )}
       </div>
       
       <div className="ruby-zhuyin-col">
@@ -48,6 +52,7 @@ function RubyGridBox({ char, zhuyin }) {
 
 export default function RubyGridWord({ word }) {
   const chars = Array.from(word.characters || '');
+  const handwrittenStrokes = word.handwrittenStrokes || [];
   
   return (
     <div className="ruby-word-stack">
@@ -56,6 +61,7 @@ export default function RubyGridWord({ word }) {
           key={index} 
           char={char} 
           zhuyin={word.zhuyin ? word.zhuyin[index] : ''} 
+          strokes={handwrittenStrokes[index]}
         />
       ))}
     </div>

@@ -3,8 +3,6 @@ import QuestionDisplay from './QuestionDisplay'
 import HandwritingCanvas from './HandwritingCanvas'
 import { initHanziLookup, recognizeFromStrokes, checkAnswerInCandidates } from '../services/visionApi'
 
-
-
 export default function GameBoard({ unit, onBack, onComplete }) {
   // ... 其他狀態維持不變
   const [wordIndex, setWordIndex] = useState(0)
@@ -15,6 +13,7 @@ export default function GameBoard({ unit, onBack, onComplete }) {
   const [attempts, setAttempts] = useState(0)
 
   const [results, setResults] = useState([])
+  const [wordStrokes, setWordStrokes] = useState([]) // 新增：蒐集當前詞彙每個字的筆跡
   const [lookupReady, setLookupReady] = useState(false)
   const canvasRef = useRef(null)
 
@@ -38,7 +37,6 @@ export default function GameBoard({ unit, onBack, onComplete }) {
     setStatus('checking')
     setFeedback('辨識中，請稍候…')
 
-
     try {
       // 等待 Google API 回傳 (傳入原始畫布尺寸 320x320)
       const candidates = await recognizeFromStrokes(strokes, 320, 320)
@@ -46,7 +44,7 @@ export default function GameBoard({ unit, onBack, onComplete }) {
 
       // 使用 Top 3 匹配
       if (checkAnswerInCandidates(candidates, expected, 3)) {
-        handleCorrect()
+        handleCorrect(strokes)
       } else {
         const newAttempts = attempts + 1
         setAttempts(newAttempts)
@@ -59,7 +57,6 @@ export default function GameBoard({ unit, onBack, onComplete }) {
             : '未能辨識，請把筆劃寫清楚一點'
         )
 
-
         setTimeout(() => { setStatus('idle'); setFeedback('') }, 3000)
       }
     } catch (err) {
@@ -69,12 +66,14 @@ export default function GameBoard({ unit, onBack, onComplete }) {
     }
   }
 
-
-  function handleCorrect() {
+  function handleCorrect(currentStrokes) {
     setStatus('correct')
     setFeedback('正確！')
     const newRevealed = [...revealedChars, charIndex]
     setRevealedChars(newRevealed)
+    
+    const newWordStrokes = [...wordStrokes, currentStrokes]
+    setWordStrokes(newWordStrokes)
 
     setTimeout(() => {
       canvasRef.current?.clear()
@@ -85,13 +84,15 @@ export default function GameBoard({ unit, onBack, onComplete }) {
         setStatus('idle')
         setFeedback('')
       } else {
-        const newResults = [...results, word]
+        const augmentedWord = { ...word, handwrittenStrokes: newWordStrokes }
+        const newResults = [...results, augmentedWord]
         setResults(newResults)
         if (!isLastWord) {
           setWordIndex((i) => i + 1)
           setCharIndex(0)
           setRevealedChars([])
           setAttempts(0)
+          setWordStrokes([])
 
           setStatus('idle')
           setFeedback('')
@@ -107,15 +108,22 @@ export default function GameBoard({ unit, onBack, onComplete }) {
     canvasRef.current?.clear()
     const newRevealed = [...revealedChars, charIndex]
     setRevealedChars(newRevealed)
+    
+    // 跳過的字塞入空的筆跡
+    const newWordStrokes = [...wordStrokes, []]
+    setWordStrokes(newWordStrokes)
+
     if (!isLastChar) {
       setCharIndex((i) => i + 1)
     } else {
-      const newResults = [...results, word]
+      const augmentedWord = { ...word, handwrittenStrokes: newWordStrokes }
+      const newResults = [...results, augmentedWord]
       setResults(newResults)
       if (!isLastWord) {
         setWordIndex((i) => i + 1)
         setCharIndex(0)
         setRevealedChars([])
+        setWordStrokes([])
       } else {
         setStatus('complete')
         onComplete(unit.id, newResults)
@@ -149,8 +157,6 @@ export default function GameBoard({ unit, onBack, onComplete }) {
         activeCharIndex={charIndex}
         revealedChars={revealedChars}
       />
-
-
 
       {feedback && (
         <div className={`feedback ${status}`}>{feedback}</div>
