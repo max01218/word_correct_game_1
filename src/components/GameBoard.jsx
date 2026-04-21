@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import QuestionDisplay   from './QuestionDisplay'
 import HandwritingCanvas from './HandwritingCanvas'
-import { initHanziLookup, recognizeFromStrokes, checkAnswer } from '../services/visionApi'
+import { initHanziLookup, recognizeFromStrokes, checkAnswerInCandidates } from '../services/visionApi'
 
-const HINT_AFTER = 3
+const HINT_AFTER = 2 // 降到 2 次失敗就提示
 
 export default function GameBoard({ unit, onBack, onComplete }) {
+  // ... 其他狀態維持不變
   const [wordIndex,     setWordIndex]     = useState(0)
   const [charIndex,     setCharIndex]     = useState(0)
   const [revealedChars, setRevealedChars] = useState([])
@@ -43,20 +44,24 @@ export default function GameBoard({ unit, onBack, onComplete }) {
     setShowHint(false)
 
     try {
-      const detected = recognizeFromStrokes(strokes)
-      const expected = word.characters[charIndex]
+      const candidates = recognizeFromStrokes(strokes)
+      const expected   = word.characters[charIndex]
 
-      if (checkAnswer(detected, expected)) {
+      // 使用 Top 3 匹配
+      if (checkAnswerInCandidates(candidates, expected, 3)) {
         handleCorrect()
       } else {
         const newAttempts = attempts + 1
         setAttempts(newAttempts)
         setStatus('wrong')
+        
+        const topDetected = candidates[0]
         setFeedback(
-          detected
-            ? `辨識為「${detected}」，不對喔，再試一次！`
+          topDetected
+            ? `辨識為「${topDetected}」，不對喔，再試一次！`
             : '未能辨識，請把筆劃寫清楚一點'
         )
+        
         if (newAttempts >= HINT_AFTER) setShowHint(true)
         setTimeout(() => { setStatus('idle'); setFeedback('') }, 2000)
       }
@@ -66,6 +71,7 @@ export default function GameBoard({ unit, onBack, onComplete }) {
       setTimeout(() => { setStatus('idle'); setFeedback('') }, 3000)
     }
   }
+
 
   function handleCorrect() {
     setStatus('correct')
