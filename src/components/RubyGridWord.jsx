@@ -25,11 +25,6 @@ function RubyGridBox({ char, zhuyin, strokes }) {
   return (
     <div className="ruby-grid-box">
       <div className="ruby-char-col">
-        <div className="char-grid-lines">
-          <div className="grid-line-h"></div>
-          <div className="grid-line-v"></div>
-        </div>
-        
         {strokes && strokes.length > 0 ? (
           <StrokeSVG strokes={strokes} />
         ) : (

@@ -1,6 +1,14 @@
 export const wordBank = {
   units: [
     {
+      id: 0,
+      name: "測試用單元",
+      theme: "快速測試手寫成果",
+      words: [
+        { id: 0,  characters: "你好", zhuyin: ["ㄋㄧˇ", "ㄏㄠˇ"] },
+      ],
+    },
+    {
       id: 1,
       name: "形容詞篇",
       theme: "描述事物的形容詞",
