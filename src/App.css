@@ -238,14 +238,8 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 }
 
 .word-card-result {
-  background: #fff;
-  border-radius: 14px;
-  padding: 14px 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,.07);
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
+  justify-content: center;
 }
 
 .result-zhuyin { display: flex; gap: 4px; }
@@ -313,4 +307,108 @@ button:disabled { opacity: .45; cursor: not-allowed; }
     font-size: 1.1rem;
   }
   .print-only th { background: #eee; }
+}
+
+/* ─── Ruby Grid Layout (Traditional Bopomofo) ────────────── */
+.ruby-word-stack {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 2px solid #2c2c2c;
+  /* box-shadow: 0 2px 8px rgba(0,0,0,.08); */
+}
+
+.ruby-grid-box {
+  display: flex;
+  border-bottom: 2px solid #2c2c2c; /* Divider between stacked characters */
+  background: #fff;
+}
+.ruby-grid-box:last-child {
+  border-bottom: none;
+}
+
+.ruby-char-col {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  border-right: 2px solid #2c2c2c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Background Grid Lines (Tian Zi Ge / 田字格) */
+.char-grid-lines {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+}
+.grid-line-h {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  border-top: 2px dashed #aaa;
+}
+.grid-line-v {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  height: 100%;
+  border-left: 2px dashed #aaa;
+}
+
+.char-text {
+  font-size: 4.5rem;
+  font-family: 'Kaiti', 'KaiTi_GB2312', 'BiauKai', inherit; /* Prefer Kai font for education */
+  color: #000;
+  z-index: 1; /* Above grid lines */
+}
+
+.ruby-zhuyin-col {
+  width: 38px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  color: #000;
+  font-family: 'Bopomofo', inherit;
+}
+
+/* Base symbols (ㄅㄆㄇㄈ...) */
+.zhuyin-symbols {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.05;
+}
+.zhuyin-symbols.compact {
+  line-height: 0.95;
+  transform: scaleY(0.95);
+}
+
+/* Z-Symbol specifically */
+.z-sym {
+  display: inline-block;
+}
+
+/* Tones (ˊ ˇ ˋ) that stay on the right side */
+.zhuyin-tone.normal-tone {
+  position: absolute;
+  right: 1px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.1rem;
+}
+
+/* Light tone (˙) that stays on top */
+.zhuyin-tone.light-tone {
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.4rem;
+  line-height: .5;
 }

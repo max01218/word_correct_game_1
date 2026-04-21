@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { submitToClassroom, isConfigured } from '../services/classroomApi'
+import RubyGridWord from './RubyGridWord'
 
 export default function ResultSheet({ unit, results, onBack }) {
   const [submitting,    setSubmitting]    = useState(false)
@@ -29,12 +30,7 @@ export default function ResultSheet({ unit, results, onBack }) {
       <div className="word-grid">
         {results.map((word, i) => (
           <div key={i} className="word-card-result">
-            <div className="result-zhuyin">
-              {word.zhuyin.map((z, j) => (
-                <span key={j} className="z">{z}</span>
-              ))}
-            </div>
-            <div className="result-chars">{word.characters}</div>
+            <RubyGridWord word={word} />
           </div>
         ))}
       </div>
