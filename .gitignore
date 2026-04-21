@@ -1,0 +1,16 @@
+# Python 虛擬環境
+backend/venv/
+
+# PaddleOCR 自動下載的模型快取
+~/.paddleocr/
+
+# 環境變數
+.env
+
+# Node
+node_modules/
+dist/
+
+# 系統
+.DS_Store
+Thumbs.db
