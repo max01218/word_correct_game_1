@@ -11,9 +11,10 @@ export default function GameBoard({ unit, onBack, onComplete }) {
   const [status,        setStatus]        = useState('idle')
   const [feedback,      setFeedback]      = useState('')
   const [attempts,      setAttempts]      = useState(0)
-  const [results,       setResults]       = useState([])
-  const [wordStrokes,   setWordStrokes]   = useState([])
-  const [lookupReady,   setLookupReady]   = useState(false)
+  const [results,          setResults]          = useState([])
+  const [wordStrokes,      setWordStrokes]      = useState([])
+  const [wordZhuyinResult, setWordZhuyinResult] = useState([]) // zhuyin_select: true=correct, false=skipped
+  const [lookupReady,      setLookupReady]      = useState(false)
 
   const canvasRef  = useRef(null)
   const word       = unit.words[wordIndex]
@@ -44,6 +45,7 @@ export default function GameBoard({ unit, onBack, onComplete }) {
       setRevealedChars([])
       setAttempts(0)
       setWordStrokes([])
+      setWordZhuyinResult([])
       setStatus('idle')
       setFeedback('')
     } else {
@@ -142,10 +144,14 @@ export default function GameBoard({ unit, onBack, onComplete }) {
   // ── Zhuyin-select handler ─────────────────────────────────────────
 
   function handleZhuyinAdvance(isCorrect) {
+    const newResult = [...wordZhuyinResult, isCorrect]
     if (!isLastChar) {
+      setWordZhuyinResult(newResult)
       setCharIndex(i => i + 1)
     } else {
-      finishWord({ ...word, handwrittenStrokes: [] })
+      // blank out zhuyin for characters answered wrong/skipped
+      const resultZhuyin = (word.zhuyin || []).map((z, i) => newResult[i] ? z : '')
+      finishWord({ ...word, zhuyin: resultZhuyin, handwrittenStrokes: [] })
     }
   }
 
