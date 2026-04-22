@@ -486,11 +486,21 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 
 .ruby-grid-box {
   display: flex;
-  border-bottom: 2px solid #2c2c2c; /* Divider between stacked characters */
+  border-bottom: 2px solid #2c2c2c;
   background: #fff;
 }
 .ruby-grid-box:last-child {
   border-bottom: none;
+}
+
+/* Skipped character — red tint */
+.ruby-grid-box.skipped-box {
+  background: #fff1f0;
+}
+
+/* Whole card — red outer border when any char was skipped */
+.ruby-word-stack.has-skipped {
+  border-color: #ff4d4f;
 }
 
 .ruby-char-col {
