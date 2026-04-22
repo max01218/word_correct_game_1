@@ -231,15 +231,20 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .result-header p  { color: #888; }
 
 .word-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
   margin-bottom: 28px;
 }
 
 .word-card-result {
   display: flex;
   justify-content: center;
+  padding: 14px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.10);
 }
 
 .result-zhuyin { display: flex; gap: 4px; }
@@ -308,10 +313,18 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 
   /* 詞彙格子：列印時以較多欄位排版，善用紙張寬度 */
   .word-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: flex-start;
     margin-bottom: 0;
+  }
+
+  .word-card-result {
+    padding: 8px;
+    border-radius: 0;
+    box-shadow: none;
+    border: 1px solid #ccc;
   }
 
   /* 確保手寫 SVG 顯示在列印中 */
