@@ -480,27 +480,29 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   display: flex;
   flex-direction: column;
   background: #fff;
-  border: 2px solid #2c2c2c;
-  /* box-shadow: 0 2px 8px rgba(0,0,0,.08); */
+  /* outer border removed — each row manages its own border */
 }
 
+/* Each character row has its own full border */
 .ruby-grid-box {
   display: flex;
-  border-bottom: 2px solid #2c2c2c;
   background: #fff;
+  border: 2px solid #2c2c2c;
+  margin-top: -2px;   /* collapse adjacent borders */
+  position: relative;
 }
-.ruby-grid-box:last-child {
-  border-bottom: none;
+.ruby-grid-box:first-child {
+  margin-top: 0;
 }
 
-/* Skipped character — red tint */
+/* Skipped row — red border + light red background */
 .ruby-grid-box.skipped-box {
   background: #fff1f0;
-}
-
-/* Whole card — red outer border when any char was skipped */
-.ruby-word-stack.has-skipped {
   border-color: #ff4d4f;
+  z-index: 1;   /* red border overlaps adjacent black border */
+}
+.ruby-grid-box.skipped-box .ruby-char-col {
+  border-right-color: #ff4d4f;
 }
 
 .ruby-char-col {
