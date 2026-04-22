@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { saveWordBank, deleteWordBank } from '../services/dbApi';
+import ZhuyinPicker from './ZhuyinPicker';
 
 export default function TeacherDashboard({ units, onUpdate }) {
   const [activeUnit, setActiveUnit] = useState(null);
@@ -45,20 +46,12 @@ export default function TeacherDashboard({ units, onUpdate }) {
 
   const updateWord = (index, field, value) => {
     const newWords = [...activeUnit.words];
-    
-    if (field === 'zhuyin') {
-      // Allow user to input zhuyin comma separated, e.g. "ㄒㄧㄢˊ,ㄕㄨˊ"
-      newWords[index].zhuyin = value.split(',').map(s => s.trim());
-      // Keep a raw string for the input field to bind to
-      newWords[index]._rawZhuyin = value;
-    } else {
-      newWords[index][field] = value;
-    }
+    newWords[index][field] = value;
     setActiveUnit({ ...activeUnit, words: newWords });
   };
 
   const addWord = () => {
-    const newWords = [...activeUnit.words, { characters: '', zhuyin: [], _rawZhuyin: '' }];
+    const newWords = [...activeUnit.words, { characters: '', zhuyin: [] }];
     setActiveUnit({ ...activeUnit, words: newWords });
   };
 
@@ -103,24 +96,25 @@ export default function TeacherDashboard({ units, onUpdate }) {
 
           <h3 style={{ marginTop: '16px', borderBottom: '2px solid #eee', paddingBottom: '8px' }}>本單元詞彙列表</h3>
           {activeUnit.words.map((w, index) => (
-            <div key={index} style={{ display: 'flex', gap: '12px', alignItems: 'center', background: '#f5f5f5', padding: '12px', borderRadius: '8px' }}>
-              <span style={{ color: '#888', width: '20px' }}>{index + 1}.</span>
-              <label style={{ flex: 1 }}>
-                漢字：
-                <input value={w.characters} onChange={e => updateWord(index, 'characters', e.target.value)} placeholder="如：雄偉" style={{ width: '100%', padding: '6px' }}/>
-              </label>
-              <label style={{ flex: 2 }}>
-                注音 (請用半形逗號分隔單字)：
-                <input 
-                  value={w._rawZhuyin !== undefined ? w._rawZhuyin : w.zhuyin.join(',')} 
-                  onChange={e => updateWord(index, 'zhuyin', e.target.value)} 
-                  placeholder="如：ㄒㄩㄥˊ,ㄨㄟˇ" 
-                  style={{ width: '100%', padding: '6px' }}
+            <div key={index} style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f5f5f5', padding: '12px', borderRadius: '8px' }}>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+                <span style={{ color: '#888', alignSelf: 'center' }}>{index + 1}.</span>
+                <label style={{ flex: 1 }}>
+                  漢字：
+                  <input value={w.characters} onChange={e => updateWord(index, 'characters', e.target.value)} placeholder="如：雄偉" style={{ width: '100%', padding: '6px' }}/>
+                </label>
+                <button style={{ padding: '6px 12px', background: '#ff4d4f', color: '#fff', borderRadius: '6px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => removeWord(index)}>
+                  移除
+                </button>
+              </div>
+              <div style={{ paddingLeft: '28px' }}>
+                <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: '4px' }}>注音（點選每個字的注音）：</div>
+                <ZhuyinPicker
+                  characters={w.characters}
+                  zhuyin={w.zhuyin || []}
+                  onChange={v => updateWord(index, 'zhuyin', v)}
                 />
-              </label>
-              <button style={{ padding: '6px 12px', background: '#ff4d4f', color: '#fff', height: 'fit-content', marginTop: '20px' }} onClick={() => removeWord(index)}>
-                移除
-              </button>
+              </div>
             </div>
           ))}
 
