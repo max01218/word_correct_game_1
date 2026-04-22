@@ -285,28 +285,40 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .submit-msg.err { background: #fff1f0; color: #cf1322; }
 
 /* ─── Print ──────────────────────────────────────────────── */
-.print-only { display: none; }
-
 @media print {
-  .result-header, .word-grid, .result-actions,
-  .classroom-note, .submit-msg { display: none; }
+  /* 隱藏所有按鈕、提示、導覽 */
+  .result-actions,
+  .classroom-note,
+  .submit-msg,
+  .btn-back,
+  .btn-submit,
+  .btn-clear,
+  .btn-classroom,
+  .btn-print,
+  .btn-back-menu { display: none !important; }
 
-  .print-only {
-    display: block;
-    font-family: 'Microsoft JhengHei', sans-serif;
+  body { background: #fff; }
+
+  .app-container { max-width: 100%; padding: 0; }
+
+  /* 標題區 */
+  .result-header { margin-bottom: 16px; }
+  .result-header h2 { font-size: 1.3rem; color: #000; }
+  .result-header p  { font-size: 0.9rem; color: #444; }
+
+  /* 詞彙格子：列印時以較多欄位排版，善用紙張寬度 */
+  .word-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 10px;
+    margin-bottom: 0;
   }
-  .print-only h2 { font-size: 1.4rem; margin-bottom: 8px; }
-  .print-only table {
-    border-collapse: collapse;
-    width: 100%;
-    margin-top: 12px;
-  }
-  .print-only th, .print-only td {
-    border: 1px solid #999;
-    padding: 8px 14px;
-    font-size: 1.1rem;
-  }
-  .print-only th { background: #eee; }
+
+  /* 確保手寫 SVG 顯示在列印中 */
+  svg { display: block !important; }
+
+  /* 格子本身不需要陰影 */
+  .ruby-word-stack { box-shadow: none; }
 }
 
 /* ─── Ruby Grid Layout (Traditional Bopomofo) ────────────── */

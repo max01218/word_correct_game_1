@@ -65,24 +65,6 @@ export default function ResultSheet({ unit, results, onBack }) {
         </div>
       )}
 
-      {/* 列印專用區域 */}
-      <div className="print-only">
-        <h2>字音字形練習完成單 ─ {unit.name}</h2>
-        <p>主題：{unit.theme}</p>
-        <table>
-          <thead>
-            <tr><th>詞彙</th><th>注音</th></tr>
-          </thead>
-          <tbody>
-            {results.map((w, i) => (
-              <tr key={i}>
-                <td>{w.characters}</td>
-                <td>{w.zhuyin.join('　')}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </div>
   )
 }
