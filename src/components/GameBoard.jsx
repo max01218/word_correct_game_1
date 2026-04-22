@@ -69,13 +69,31 @@ export default function GameBoard({ unit, onBack, onComplete }) {
         const newAttempts = attempts + 1
         setAttempts(newAttempts)
         setStatus('wrong')
-        const topDetected = candidates[0]
-        setFeedback(
-          topDetected
-            ? `辨識為「${topDetected}」，不對喔，再試一次！`
-            : '未能辨識，請把筆劃寫清楚一點'
-        )
-        setTimeout(() => { setStatus('idle'); setFeedback('') }, 3000)
+        if (newAttempts >= 3) {
+          setFeedback('已達3次，自動跳過')
+          setTimeout(() => {
+            canvasRef.current?.clear()
+            const newWordStrokes = [...wordStrokes, []]
+            if (!isLastChar) {
+              setWordStrokes(newWordStrokes)
+              setRevealedChars([...revealedChars, charIndex])
+              setCharIndex(i => i + 1)
+              setAttempts(0)
+              setStatus('idle')
+              setFeedback('')
+            } else {
+              finishWord({ ...word, handwrittenStrokes: newWordStrokes })
+            }
+          }, 1500)
+        } else {
+          const topDetected = candidates[0]
+          setFeedback(
+            topDetected
+              ? `辨識為「${topDetected}」，不對喔，再試一次！`
+              : '未能辨識，請把筆劃寫清楚一點'
+          )
+          setTimeout(() => { setStatus('idle'); setFeedback('') }, 2500)
+        }
       }
     } catch (err) {
       setStatus('wrong')
@@ -158,6 +176,15 @@ export default function GameBoard({ unit, onBack, onComplete }) {
             activeCharIndex={charIndex}
             revealedChars={revealedChars}
           />
+
+          <div className="attempt-counter">
+            {[0, 1, 2].map(i => (
+              <span key={i} className={`attempt-dot ${i < attempts ? 'attempt-dot-used' : ''}`} />
+            ))}
+            <span className="attempt-label">
+              {attempts > 0 ? `錯誤 ${attempts} / 3 次` : '0 / 3 次'}
+            </span>
+          </div>
 
           {feedback && (
             <div className={`feedback ${status}`}>{feedback}</div>

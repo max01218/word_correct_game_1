@@ -1,17 +1,17 @@
 import { useState } from 'react'
 
-const INITIALS = ['ㄅ','ㄆ','ㄇ','ㄈ','ㄉ','ㄊ','ㄋ','ㄌ','ㄍ','ㄎ','ㄏ','ㄐ','ㄑ','ㄒ','ㄓ','ㄔ','ㄕ','ㄖ','ㄗ','ㄘ','ㄙ']
-const MEDIALS  = ['ㄧ','ㄨ','ㄩ']
-const FINALS   = ['ㄚ','ㄛ','ㄜ','ㄝ','ㄞ','ㄟ','ㄠ','ㄡ','ㄢ','ㄣ','ㄤ','ㄥ','ㄦ']
-const TONES    = [
-  { label: '一聲', value: '' },
+const INITIALS  = ['ㄅ','ㄆ','ㄇ','ㄈ','ㄉ','ㄊ','ㄋ','ㄌ','ㄍ','ㄎ','ㄏ','ㄐ','ㄑ','ㄒ','ㄓ','ㄔ','ㄕ','ㄖ','ㄗ','ㄘ','ㄙ']
+const MEDIALS   = ['ㄧ','ㄨ','ㄩ']
+const FINALS    = ['ㄚ','ㄛ','ㄜ','ㄝ','ㄞ','ㄟ','ㄠ','ㄡ','ㄢ','ㄣ','ㄤ','ㄥ','ㄦ']
+const TONES     = [
+  { label: '一聲',   value: '' },
   { label: '二聲 ˊ', value: 'ˊ' },
   { label: '三聲 ˇ', value: 'ˇ' },
   { label: '四聲 ˋ', value: 'ˋ' },
   { label: '輕聲 ˙', value: '˙' },
 ]
 const TONE_MARKS = new Set(['ˊ','ˇ','ˋ','˙'])
-const HINT_AFTER = 2
+const MAX_WRONG  = 3
 
 // onAdvance(isCorrect: boolean)
 export default function ZhuyinSelectQuestion({ word, charIndex, onAdvance }) {
@@ -55,14 +55,23 @@ export default function ZhuyinSelectQuestion({ word, charIndex, onAdvance }) {
       const newAttempts = attempts + 1
       setAttempts(newAttempts)
       setResult('wrong')
-      setTimeout(() => {
-        setDraft('')
-        setResult(null)
-      }, 1200)
+      if (newAttempts >= MAX_WRONG) {
+        // 錯滿3次 → 空白跳過
+        setTimeout(() => {
+          setDraft('')
+          setResult(null)
+          setAttempts(0)
+          onAdvance(false)
+        }, 1200)
+      } else {
+        setTimeout(() => {
+          setDraft('')
+          setResult(null)
+        }, 1000)
+      }
     }
   }
 
-  const showHint    = attempts >= HINT_AFTER
   const symBtnStyle = {
     padding: '7px 0',
     border: '1px solid #ddd',
@@ -70,7 +79,6 @@ export default function ZhuyinSelectQuestion({ word, charIndex, onAdvance }) {
     cursor: 'pointer',
     fontSize: '1.05rem',
     background: '#f9f9f9',
-    transition: 'background 0.1s',
   }
 
   return (
@@ -89,6 +97,16 @@ export default function ZhuyinSelectQuestion({ word, charIndex, onAdvance }) {
         「<strong>{chars[charIndex]}</strong>」的注音是？
       </p>
 
+      {/* Attempt counter */}
+      <div className="attempt-counter">
+        {[0, 1, 2].map(i => (
+          <span key={i} className={`attempt-dot ${i < attempts ? 'attempt-dot-used' : ''}`} />
+        ))}
+        <span className="attempt-label">
+          {attempts > 0 ? `錯誤 ${attempts} / ${MAX_WRONG} 次` : `0 / ${MAX_WRONG} 次`}
+        </span>
+      </div>
+
       {/* Draft preview */}
       <div className={`zy-draft ${result === 'correct' ? 'zy-draft-correct' : result === 'wrong' ? 'zy-draft-wrong' : ''}`}>
         <span className="zy-draft-text">{draft || <span style={{ color: '#bbb' }}>點選拼音…</span>}</span>
@@ -100,10 +118,6 @@ export default function ZhuyinSelectQuestion({ word, charIndex, onAdvance }) {
 
       {result === 'correct' && <div className="zy-feedback zy-feedback-correct">✓ 正確！</div>}
       {result === 'wrong'   && <div className="zy-feedback zy-feedback-wrong">✗ 不對，再試一次！</div>}
-
-      {showHint && !result && (
-        <div className="zy-hint">提示：正確注音為「<strong>{correct}</strong>」</div>
-      )}
 
       {/* Keyboard */}
       <div className="zy-keyboard">
@@ -131,12 +145,7 @@ export default function ZhuyinSelectQuestion({ word, charIndex, onAdvance }) {
         <div className="zy-kb-section-label">聲調（點選後確認）</div>
         <div className="zy-tone-row">
           {TONES.map(t => (
-            <button
-              key={t.label}
-              onClick={() => applyTone(t.value)}
-              disabled={locked}
-              className="zy-tone-btn"
-            >
+            <button key={t.label} onClick={() => applyTone(t.value)} disabled={locked} className="zy-tone-btn">
               {t.label}
             </button>
           ))}
