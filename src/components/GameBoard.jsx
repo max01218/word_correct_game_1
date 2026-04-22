@@ -15,13 +15,9 @@ export default function GameBoard({ unit, onBack, onComplete }) {
   const [wordStrokes,   setWordStrokes]   = useState([])
   const [lookupReady,   setLookupReady]   = useState(false)
 
-  // Phase 1: 看注音寫漢字 | Phase 2: 看漢字選注音
-  const [phase,               setPhase]               = useState(1)
-  const [showPhaseTransition, setShowPhaseTransition] = useState(false)
-  const [phase1Results,       setPhase1Results]       = useState([])
-
   const canvasRef  = useRef(null)
   const word       = unit.words[wordIndex]
+  const wordType   = word.type || 'handwriting'
   const totalWords = unit.words.length
   const isLastChar = charIndex === word.characters.length - 1
   const isLastWord = wordIndex === totalWords - 1
@@ -37,7 +33,25 @@ export default function GameBoard({ unit, onBack, onComplete }) {
       .catch((err) => setFeedback(`辨識引擎載入失敗：${err.message}`))
   }, [])
 
-  // ── Phase 1: handwriting ──────────────────────────────────────────
+  // ── Shared: finish current word and advance ───────────────────────
+
+  function finishWord(augmentedWord) {
+    const newResults = [...results, augmentedWord]
+    setResults(newResults)
+    if (!isLastWord) {
+      setWordIndex(i => i + 1)
+      setCharIndex(0)
+      setRevealedChars([])
+      setAttempts(0)
+      setWordStrokes([])
+      setStatus('idle')
+      setFeedback('')
+    } else {
+      onComplete(unit.id, newResults)
+    }
+  }
+
+  // ── Handwriting handlers ──────────────────────────────────────────
 
   async function handleSubmit(strokes) {
     if (!strokes || strokes.length === 0) {
@@ -73,7 +87,7 @@ export default function GameBoard({ unit, onBack, onComplete }) {
   function handleCorrect(currentStrokes) {
     setStatus('correct')
     setFeedback('正確！')
-    const newRevealed   = [...revealedChars, charIndex]
+    const newRevealed    = [...revealedChars, charIndex]
     setRevealedChars(newRevealed)
     const newWordStrokes = [...wordStrokes, currentStrokes]
     setWordStrokes(newWordStrokes)
@@ -86,22 +100,7 @@ export default function GameBoard({ unit, onBack, onComplete }) {
         setStatus('idle')
         setFeedback('')
       } else {
-        const augmentedWord = { ...word, handwrittenStrokes: newWordStrokes }
-        const newResults    = [...results, augmentedWord]
-        setResults(newResults)
-        if (!isLastWord) {
-          setWordIndex(i => i + 1)
-          setCharIndex(0)
-          setRevealedChars([])
-          setAttempts(0)
-          setWordStrokes([])
-          setStatus('idle')
-          setFeedback('')
-        } else {
-          // Phase 1 done → show transition screen
-          setPhase1Results(newResults)
-          setShowPhaseTransition(true)
-        }
+        finishWord({ ...word, handwrittenStrokes: newWordStrokes })
       }
     }, 1200)
   }
@@ -110,81 +109,31 @@ export default function GameBoard({ unit, onBack, onComplete }) {
     canvasRef.current?.clear()
     const newWordStrokes = [...wordStrokes, []]
     setWordStrokes(newWordStrokes)
-    const newRevealed = [...revealedChars, charIndex]
-    setRevealedChars(newRevealed)
+    setRevealedChars([...revealedChars, charIndex])
 
     if (!isLastChar) {
       setCharIndex(i => i + 1)
+      setAttempts(0)
+      setStatus('idle')
+      setFeedback('')
     } else {
-      const augmentedWord = { ...word, handwrittenStrokes: newWordStrokes }
-      const newResults    = [...results, augmentedWord]
-      setResults(newResults)
-      if (!isLastWord) {
-        setWordIndex(i => i + 1)
-        setCharIndex(0)
-        setRevealedChars([])
-        setWordStrokes([])
-      } else {
-        setPhase1Results(newResults)
-        setShowPhaseTransition(true)
-        return
-      }
+      finishWord({ ...word, handwrittenStrokes: newWordStrokes })
     }
-    setAttempts(0)
-    setStatus('idle')
-    setFeedback('')
   }
 
-  // ── Phase transition ──────────────────────────────────────────────
+  // ── Zhuyin-select handler ─────────────────────────────────────────
 
-  function startPhase2() {
-    setShowPhaseTransition(false)
-    setPhase(2)
-    setWordIndex(0)
-    setCharIndex(0)
-    setStatus('idle')
-    setFeedback('')
-  }
-
-  // ── Phase 2: Zhuyin selection ─────────────────────────────────────
-
-  function advancePhase2(isCorrect) {
+  function handleZhuyinAdvance(isCorrect) {
     if (!isLastChar) {
       setCharIndex(i => i + 1)
-    } else if (!isLastWord) {
-      setWordIndex(i => i + 1)
-      setCharIndex(0)
     } else {
-      onComplete(unit.id, phase1Results)
+      finishWord({ ...word, handwrittenStrokes: [] })
     }
   }
 
   // ── Render ────────────────────────────────────────────────────────
 
   const disabled = status === 'checking' || status === 'correct'
-
-  if (showPhaseTransition) {
-    return (
-      <div className="game-board">
-        <div className="phase-transition-card">
-          <div className="phase-done-icon">✍️</div>
-          <h2>第一關完成！</h2>
-          <p style={{ color: '#888' }}>接下來換第二關</p>
-          <div className="phase-two-preview">
-            <span>看漢字</span>
-            <span className="phase-arrow">→</span>
-            <span>選注音</span>
-          </div>
-          <button className="btn-submit phase-start-btn" onClick={startPhase2}>
-            開始第二關 →
-          </button>
-          <button className="btn-back" style={{ width: '100%', textAlign: 'center' }} onClick={onBack}>
-            ← 返回選單
-          </button>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="game-board">
@@ -198,11 +147,11 @@ export default function GameBoard({ unit, onBack, onComplete }) {
         <div className="progress-bar-fill" style={{ width: `${(wordIndex / totalWords) * 100}%` }} />
       </div>
 
-      <div className={`phase-badge phase-badge-${phase}`}>
-        {phase === 1 ? '✍️ 第一關：看注音寫漢字' : '🔤 第二關：看漢字選注音'}
+      <div className={`phase-badge ${wordType === 'handwriting' ? 'phase-badge-1' : 'phase-badge-2'}`}>
+        {wordType === 'handwriting' ? '✍️ 看注音寫漢字' : '🔤 看漢字選注音'}
       </div>
 
-      {phase === 1 ? (
+      {wordType === 'handwriting' ? (
         <>
           <QuestionDisplay
             word={word}
@@ -228,7 +177,7 @@ export default function GameBoard({ unit, onBack, onComplete }) {
           word={word}
           charIndex={charIndex}
           allUnitZhuyin={allUnitZhuyin}
-          onAdvance={advancePhase2}
+          onAdvance={handleZhuyinAdvance}
         />
       )}
     </div>
