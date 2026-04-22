@@ -289,6 +289,124 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .submit-msg.ok  { background: #f0fff4; color: #389e0d; }
 .submit-msg.err { background: #fff1f0; color: #cf1322; }
 
+/* ─── Phase badge ────────────────────────────────────────── */
+.phase-badge {
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 5px 16px;
+  border-radius: 20px;
+  align-self: flex-start;
+}
+.phase-badge-1 { background: #e8eeff; color: #3a5bd9; }
+.phase-badge-2 { background: #fff7e6; color: #d46b08; }
+
+/* ─── Phase transition card ──────────────────────────────── */
+.phase-transition-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  background: #fff;
+  border-radius: 20px;
+  padding: 44px 32px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.10);
+  text-align: center;
+  width: 100%;
+  margin-top: 32px;
+}
+.phase-done-icon { font-size: 3rem; }
+.phase-transition-card h2 { font-size: 1.6rem; color: #3a5bd9; }
+.phase-two-preview {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #f0f4ff;
+  border-radius: 12px;
+  padding: 14px 28px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #3a5bd9;
+}
+.phase-arrow { color: #aaa; font-size: 1.4rem; }
+.phase-start-btn { width: 100%; font-size: 1.1rem; padding: 14px; }
+
+/* ─── Zhuyin Select (Phase 2) ────────────────────────────── */
+.zy-select-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+}
+
+.zy-word-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.zy-char-box {
+  width: 80px;
+  height: 80px;
+  border: 2px solid #c5cfe8;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.4rem;
+  background: #fff;
+  color: #2c2c2c;
+  transition: border-color .2s, box-shadow .2s;
+}
+.zy-char-box.zy-active {
+  border-color: #d46b08;
+  box-shadow: 0 0 0 3px rgba(212,107,8,.18);
+}
+.zy-char-box.zy-done {
+  border-color: #52c41a;
+  background: #f0fff4;
+  color: #2a7a00;
+}
+
+.zy-prompt {
+  font-size: 1rem;
+  color: #555;
+  margin: 0;
+}
+
+.zy-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.zy-option {
+  padding: 20px 8px;
+  font-size: 1.25rem;
+  border: 2px solid #dde4ff;
+  border-radius: 14px;
+  background: #f0f4ff;
+  color: #3a5bd9;
+  letter-spacing: 2px;
+  transition: background .15s, transform .1s, border-color .15s;
+}
+.zy-option:hover:not(:disabled) {
+  background: #dde4ff;
+  transform: scale(1.04);
+}
+.zy-option.zy-correct {
+  background: #f0fff4;
+  border-color: #52c41a;
+  color: #389e0d;
+}
+.zy-option.zy-wrong {
+  background: #fff1f0;
+  border-color: #ff4d4f;
+  color: #cf1322;
+}
+
 /* ─── Print ──────────────────────────────────────────────── */
 @media print {
   /* 隱藏所有按鈕、提示、導覽 */
