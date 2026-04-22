@@ -5,7 +5,7 @@ export default function QuestionDisplay({ word, activeCharIndex, revealedChars }
       <div className="zhuyin-row">
         {word.zhuyin.map((z, i) => {
           const isActive   = i === activeCharIndex
-          const isRevealed = i < activeCharIndex || revealedChars.includes(i)
+          const isRevealed = revealedChars.includes(i)
           return (
             <div key={i} className={`zhuyin-box ${isActive ? 'active' : ''} ${isRevealed ? 'revealed' : ''}`}>
               <div className="zhuyin-text">{z}</div>
