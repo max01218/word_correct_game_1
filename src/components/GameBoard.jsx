@@ -73,7 +73,7 @@ export default function GameBoard({ unit, onBack, onComplete }) {
           setFeedback('已達3次，自動跳過')
           setTimeout(() => {
             canvasRef.current?.clear()
-            const newWordStrokes = [...wordStrokes, []]
+            const newWordStrokes = [...wordStrokes, null]
             if (!isLastChar) {
               setWordStrokes(newWordStrokes)
               setRevealedChars([...revealedChars, charIndex])
@@ -125,7 +125,7 @@ export default function GameBoard({ unit, onBack, onComplete }) {
 
   function skipChar() {
     canvasRef.current?.clear()
-    const newWordStrokes = [...wordStrokes, []]
+    const newWordStrokes = [...wordStrokes, null]
     setWordStrokes(newWordStrokes)
     setRevealedChars([...revealedChars, charIndex])
 
