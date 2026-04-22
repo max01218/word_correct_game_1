@@ -5,18 +5,20 @@ import ZhuyinSelectQuestion from './ZhuyinSelectQuestion'
 import { initHanziLookup, recognizeFromStrokes, checkAnswerInCandidates } from '../services/visionApi'
 
 export default function GameBoard({ unit, onBack, onComplete }) {
-  const [wordIndex,     setWordIndex]     = useState(0)
-  const [charIndex,     setCharIndex]     = useState(0)
-  const [revealedChars, setRevealedChars] = useState([])
-  const [status,        setStatus]        = useState('idle')
-  const [feedback,      setFeedback]      = useState('')
-  const [attempts,      setAttempts]      = useState(0)
+  const [wordIndex,        setWordIndex]        = useState(0)
+  const [charIndex,        setCharIndex]        = useState(0)
+  const [revealedChars,    setRevealedChars]    = useState([])
+  const [status,           setStatus]           = useState('idle')
+  const [feedback,         setFeedback]         = useState('')
+  const [attempts,         setAttempts]         = useState(0)
   const [results,          setResults]          = useState([])
   const [wordStrokes,      setWordStrokes]      = useState([])
-  const [wordZhuyinResult, setWordZhuyinResult] = useState([]) // zhuyin_select: true=correct, false=skipped
+  const [wordZhuyinResult, setWordZhuyinResult] = useState([])
   const [lookupReady,      setLookupReady]      = useState(false)
 
   const canvasRef  = useRef(null)
+  const lockRef    = useRef(false)   // prevents overlapping async submissions
+
   const word       = unit.words[wordIndex]
   const wordType   = word.type || 'handwriting'
   const totalWords = unit.words.length
@@ -40,6 +42,7 @@ export default function GameBoard({ unit, onBack, onComplete }) {
     const newResults = [...results, augmentedWord]
     setResults(newResults)
     if (!isLastWord) {
+      lockRef.current = false
       setWordIndex(i => i + 1)
       setCharIndex(0)
       setRevealedChars([])
@@ -56,21 +59,27 @@ export default function GameBoard({ unit, onBack, onComplete }) {
   // ── Handwriting handlers ──────────────────────────────────────────
 
   async function handleSubmit(strokes) {
+    if (lockRef.current) return          // block overlapping calls
     if (!strokes || strokes.length === 0) {
       setFeedback('請先畫出字再送出')
       return
     }
+
+    lockRef.current = true
     setStatus('checking')
     setFeedback('辨識中，請稍候…')
+
     try {
       const candidates = await recognizeFromStrokes(strokes, 320, 320)
       const expected   = word.characters[charIndex]
+
       if (checkAnswerInCandidates(candidates, expected, 3)) {
-        handleCorrect(strokes)
+        handleCorrect(strokes)           // lock released inside handleCorrect timeout
       } else {
         const newAttempts = attempts + 1
         setAttempts(newAttempts)
         setStatus('wrong')
+
         if (newAttempts >= 3) {
           setFeedback('已達3次，自動跳過')
           setTimeout(() => {
@@ -78,13 +87,15 @@ export default function GameBoard({ unit, onBack, onComplete }) {
             const newWordStrokes = [...wordStrokes, null]
             if (!isLastChar) {
               setWordStrokes(newWordStrokes)
-              setRevealedChars([...revealedChars, charIndex])
+              // do NOT add to revealedChars — skipped chars stay blank
               setCharIndex(i => i + 1)
               setAttempts(0)
               setStatus('idle')
               setFeedback('')
+              lockRef.current = false    // release for next char
             } else {
               finishWord({ ...word, handwrittenStrokes: newWordStrokes })
+              // finishWord releases lock internally
             }
           }, 1500)
         } else {
@@ -94,13 +105,21 @@ export default function GameBoard({ unit, onBack, onComplete }) {
               ? `辨識為「${topDetected}」，不對喔，再試一次！`
               : '未能辨識，請把筆劃寫清楚一點'
           )
-          setTimeout(() => { setStatus('idle'); setFeedback('') }, 2500)
+          setTimeout(() => {
+            setStatus('idle')
+            setFeedback('')
+            lockRef.current = false      // release for retry
+          }, 2500)
         }
       }
     } catch (err) {
       setStatus('wrong')
       setFeedback(err.message)
-      setTimeout(() => { setStatus('idle'); setFeedback('') }, 3000)
+      setTimeout(() => {
+        setStatus('idle')
+        setFeedback('')
+        lockRef.current = false
+      }, 3000)
     }
   }
 
@@ -119,26 +138,11 @@ export default function GameBoard({ unit, onBack, onComplete }) {
         setAttempts(0)
         setStatus('idle')
         setFeedback('')
+        lockRef.current = false          // release for next char
       } else {
         finishWord({ ...word, handwrittenStrokes: newWordStrokes })
       }
     }, 1200)
-  }
-
-  function skipChar() {
-    canvasRef.current?.clear()
-    const newWordStrokes = [...wordStrokes, null]
-    setWordStrokes(newWordStrokes)
-    setRevealedChars([...revealedChars, charIndex])
-
-    if (!isLastChar) {
-      setCharIndex(i => i + 1)
-      setAttempts(0)
-      setStatus('idle')
-      setFeedback('')
-    } else {
-      finishWord({ ...word, handwrittenStrokes: newWordStrokes })
-    }
   }
 
   // ── Zhuyin-select handler ─────────────────────────────────────────
@@ -149,15 +153,12 @@ export default function GameBoard({ unit, onBack, onComplete }) {
       setWordZhuyinResult(newResult)
       setCharIndex(i => i + 1)
     } else {
-      // blank out zhuyin for characters answered wrong/skipped
       const resultZhuyin = (word.zhuyin || []).map((z, i) => newResult[i] ? z : '')
       finishWord({ ...word, zhuyin: resultZhuyin, handwrittenStrokes: [] })
     }
   }
 
   // ── Render ────────────────────────────────────────────────────────
-
-  const disabled = status === 'checking' || status === 'correct'
 
   return (
     <div className="game-board">
@@ -199,7 +200,7 @@ export default function GameBoard({ unit, onBack, onComplete }) {
           <HandwritingCanvas
             ref={canvasRef}
             onSubmit={handleSubmit}
-            disabled={disabled}
+            disabled={status === 'checking' || status === 'correct'}
           />
 
           <p className="canvas-tip">在上方區域手寫漢字，完成後點「確認送出」</p>
