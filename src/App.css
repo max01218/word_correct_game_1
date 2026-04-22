@@ -300,12 +300,12 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .phase-badge-1 { background: #e8eeff; color: #3a5bd9; }
 .phase-badge-2 { background: #fff7e6; color: #d46b08; }
 
-/* ─── Zhuyin Select ──────────────────────────────────────── */
+/* ─── Zhuyin Select (keyboard mode) ─────────────────────── */
 .zy-select-wrapper {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 14px;
   width: 100%;
 }
 
@@ -316,14 +316,14 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 }
 
 .zy-char-box {
-  width: 80px;
-  height: 80px;
+  width: 72px;
+  height: 72px;
   border: 2px solid #c5cfe8;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.4rem;
+  font-size: 2.2rem;
   background: #fff;
   color: #2c2c2c;
   transition: border-color .2s, box-shadow .2s;
@@ -338,44 +338,85 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   color: #2a7a00;
 }
 
-.zy-prompt {
-  font-size: 1rem;
-  color: #555;
-  margin: 0;
-}
+.zy-prompt { font-size: .95rem; color: #555; margin: 0; }
 
-.zy-options {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+/* Draft preview bar */
+.zy-draft {
+  display: flex;
+  align-items: center;
   width: 100%;
-  max-width: 360px;
+  background: #f5f7ff;
+  border: 2px solid #c5cfe8;
+  border-radius: 10px;
+  padding: 8px 12px;
+  min-height: 48px;
+  transition: border-color .2s, background .2s;
+}
+.zy-draft-correct { border-color: #52c41a; background: #f0fff4; }
+.zy-draft-wrong   { border-color: #ff4d4f; background: #fff1f0; }
+.zy-draft-text    { font-size: 1.5rem; letter-spacing: 3px; min-width: 40px; }
+
+/* Feedback line */
+.zy-feedback {
+  font-size: 1rem;
+  font-weight: 700;
+  padding: 4px 16px;
+  border-radius: 8px;
+}
+.zy-feedback-correct { background: #f0fff4; color: #389e0d; }
+.zy-feedback-wrong   { background: #fff1f0; color: #cf1322; }
+
+.zy-hint {
+  font-size: .9rem;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 8px;
+  padding: 6px 14px;
+  color: #7c5300;
+  width: 100%;
+  text-align: center;
 }
 
-.zy-option {
-  padding: 20px 8px;
-  font-size: 1.25rem;
-  border: 2px solid #dde4ff;
-  border-radius: 14px;
-  background: #f0f4ff;
+/* Keyboard layout */
+.zy-keyboard {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.zy-kb-section-label {
+  font-size: .75rem;
+  color: #999;
+  margin-top: 4px;
+}
+
+.zy-kb-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+}
+
+.zy-tone-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.zy-tone-btn {
+  padding: 8px 14px;
+  border: 2px solid #3a5bd9;
+  border-radius: 8px;
+  background: #e8eeff;
   color: #3a5bd9;
-  letter-spacing: 2px;
-  transition: background .15s, transform .1s, border-color .15s;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .1s;
 }
-.zy-option:hover:not(:disabled) {
-  background: #dde4ff;
-  transform: scale(1.04);
-}
-.zy-option.zy-correct {
-  background: #f0fff4;
-  border-color: #52c41a;
-  color: #389e0d;
-}
-.zy-option.zy-wrong {
-  background: #fff1f0;
-  border-color: #ff4d4f;
-  color: #cf1322;
-}
+.zy-tone-btn:hover:not(:disabled) { background: #c5d0f5; }
+.zy-tone-btn:disabled { opacity: .45; cursor: not-allowed; }
 
 /* ─── Print ──────────────────────────────────────────────── */
 @media print {
