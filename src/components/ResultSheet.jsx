@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { submitToClassroom, isConfigured } from '../services/classroomApi'
 import RubyGridWord from './RubyGridWord'
 
@@ -23,8 +23,8 @@ export default function ResultSheet({ unit, results, onBack }) {
   return (
     <div className="result-sheet">
       <div className="result-header">
-        <h2>🎉 {unit.name} 完成！</h2>
-        <p>{unit.theme}　｜　共 {results.length} 個詞</p>
+        <h2>{results.length < unit.words.length ? '⏱️ 中途結算' : `🎉 ${unit.name} 完成！`}</h2>
+        <p>{unit.theme}　｜　已挑戰 {results.length} / {unit.words.length} 個詞</p>
       </div>
 
       <div className="word-grid">

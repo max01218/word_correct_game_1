@@ -193,7 +193,6 @@ export default function TeacherDashboard({ units, onUpdate }) {
                       onChange={e => {
                         const val = e.target.value;
                         updateWord(index, 'characters', val);
-                        // Reset quizIndices if characters change length significantly or just keep it simple
                       }}
                       placeholder="如：雄偉"
                       style={{ display: 'block', width: '100%', padding: '6px', marginTop: '4px' }}
@@ -206,34 +205,47 @@ export default function TeacherDashboard({ units, onUpdate }) {
                       {Array.from(w.characters || '').map((char, charIdx) => {
                         const isActive = !w.quizIndices || w.quizIndices.length === 0 || w.quizIndices.includes(charIdx);
                         return (
-                          <button
-                            key={charIdx}
-                            onClick={() => {
-                              let newIndices = w.quizIndices ? [...w.quizIndices] : Array.from({ length: w.characters.length }, (_, i) => i);
-                              if (newIndices.includes(charIdx)) {
-                                newIndices = newIndices.filter(i => i !== charIdx);
-                              } else {
-                                newIndices.push(charIdx);
-                                newIndices.sort((a, b) => a - b);
-                              }
-                              updateWord(index, 'quizIndices', newIndices);
-                            }}
-                            style={{
-                              width: '36px',
-                              height: '36px',
-                              borderRadius: '4px',
-                              border: isActive ? '2px solid #3a5bd9' : '1px solid #ddd',
-                              background: isActive ? '#e8eeff' : '#f5f5f5',
-                              color: isActive ? '#3a5bd9' : '#999',
-                              fontWeight: isActive ? 700 : 400,
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            {char || '?'}
-                          </button>
+                          <div key={charIdx} style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                            <button
+                              onClick={() => {
+                                let newIndices = w.quizIndices ? [...w.quizIndices] : Array.from({ length: w.characters.length }, (_, i) => i);
+                                if (newIndices.includes(charIdx)) {
+                                  newIndices = newIndices.filter(i => i !== charIdx);
+                                } else {
+                                  newIndices.push(charIdx);
+                                  newIndices.sort((a, b) => a - b);
+                                }
+                                updateWord(index, 'quizIndices', newIndices);
+                              }}
+                              style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '4px',
+                                border: isActive ? '2px solid #3a5bd9' : '1px solid #ddd',
+                                background: isActive ? '#e8eeff' : '#f5f5f5',
+                                color: isActive ? '#3a5bd9' : '#999',
+                                fontWeight: isActive ? 700 : 400,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              {char || '?'}
+                            </button>
+                            {/* Alt characters input */}
+                            <input 
+                              placeholder="通同字"
+                              value={(w.altCharacters || [])[charIdx] || ''}
+                              onChange={e => {
+                                const newAlts = w.altCharacters ? [...w.altCharacters] : new Array(w.characters.length).fill('');
+                                newAlts[charIdx] = e.target.value;
+                                updateWord(index, 'altCharacters', newAlts);
+                              }}
+                              style={{ width: '48px', fontSize: '0.65rem', padding: '2px', textAlign: 'center', border: '1px solid #ddd', borderRadius: '4px' }}
+                              title="可填入多個答案，以逗號分隔"
+                            />
+                          </div>
                         );
                       })}
                     </div>
@@ -248,7 +260,9 @@ export default function TeacherDashboard({ units, onUpdate }) {
                   <ZhuyinPicker
                     characters={w.characters}
                     zhuyin={w.zhuyin || []}
+                    altZhuyin={w.altZhuyin || []}
                     onChange={v => updateWord(index, 'zhuyin', v)}
+                    onAltChange={v => updateWord(index, 'altZhuyin', v)}
                   />
                 </div>
               </div>

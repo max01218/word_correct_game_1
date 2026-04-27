@@ -19,7 +19,11 @@ export default function ZhuyinSelectQuestion({ word, charIndex, onAdvance }) {
   const [result,   setResult]   = useState(null)   // 'correct' | 'wrong' | null
   const [attempts, setAttempts] = useState(0)
 
-  const correct = word.zhuyin?.[charIndex] || ''
+  const mainCorrect = word.zhuyin?.[charIndex] || ''
+  const altZhuyinStr = (word.altZhuyin && word.altZhuyin[charIndex]) || ''
+  const altCorrects = altZhuyinStr.split(/[ ,，]+/).filter(Boolean)
+  const allowedAnswers = [mainCorrect, ...altCorrects]
+
   const chars   = [...word.characters]
   const locked  = result !== null
 
@@ -43,7 +47,7 @@ export default function ZhuyinSelectQuestion({ word, charIndex, onAdvance }) {
     const stripped = [...draft].filter(c => !TONE_MARKS.has(c)).join('')
     const answer   = stripped + tone
 
-    if (answer === correct) {
+    if (allowedAnswers.includes(answer)) {
       setResult('correct')
       setTimeout(() => {
         setDraft('')

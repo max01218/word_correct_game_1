@@ -2,16 +2,19 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import QuestionDisplay from './QuestionDisplay'
 import HandwritingCanvas from './HandwritingCanvas'
 import ZhuyinSelectQuestion from './ZhuyinSelectQuestion'
-import { initHanziLookup, recognizeFromStrokes, checkAnswerInCandidates } from '../services/visionApi'
+import { initHanziLookup, recognizeFromStrokes, recognizeWithLocalEngine, checkAnswerInCandidates } from '../services/visionApi'
+import { useAuth } from '../context/AuthContext'
+import { addMistake, removeMistake, savePartialResults } from '../services/dbApi'
 
-export default function GameBoard({ unit, onBack, onComplete }) {
-  const [wordIndex,        setWordIndex]        = useState(0)
+export default function GameBoard({ unit, initialResults = [], onBack, onComplete }) {
+  const { currentUser } = useAuth()
+  const [wordIndex,        setWordIndex]        = useState(initialResults.length)
   const [charIndex,        setCharIndex]        = useState(0)
   const [revealedChars,    setRevealedChars]    = useState([])
   const [status,           setStatus]           = useState('idle')
   const [feedback,         setFeedback]         = useState('')
   const [attempts,         setAttempts]         = useState(0)
-  const [results,          setResults]          = useState([])
+  const [results,          setResults]          = useState(initialResults)
   const [wordStrokes,      setWordStrokes]      = useState([])
   const [wordZhuyinResult, setWordZhuyinResult] = useState([])
   const [lookupReady,      setLookupReady]      = useState(false)
@@ -61,9 +64,40 @@ export default function GameBoard({ unit, onBack, onComplete }) {
 
   // ── Shared: finish current word and advance ───────────────────────
 
-  function finishWord(augmentedWord) {
+  async function finishWord(augmentedWord) {
     const newResults = [...results, augmentedWord]
     setResults(newResults)
+
+    // 判斷是否為錯題
+    const chars = Array.from(augmentedWord.characters || '')
+    const strokes = augmentedWord.handwrittenStrokes || []
+    const zhuyins = augmentedWord.zhuyin || []
+
+    const isMistake = chars.some((_, i) => {
+      if (!quizIndices.includes(i)) return false
+      if (wordType === 'handwriting') {
+        return strokes[i] === null
+      } else {
+        return zhuyins[i] === ''
+      }
+    })
+
+    if (currentUser) {
+      if (isMistake) {
+        // 重要：儲存原始題目 (word) 而非作答結果 (augmentedWord)，
+        // 否則錯題本裡面會變成空字串或空筆畫。
+        await addMistake(currentUser.uid, { ...word, quizIndices })
+      } else {
+        await removeMistake(currentUser.uid, augmentedWord.characters)
+      }
+      // 儲存中途進度至 Firebase (簡化版：不儲存沉重的筆跡坐標)
+      const simplifiedResults = newResults.map(r => ({
+        ...r,
+        handwrittenStrokes: [] // 清除座標資料，節存空間並規避巢狀陣列限制
+      }));
+      await savePartialResults(currentUser.uid, unit.docId || unit.id, simplifiedResults)
+    }
+
     if (!isLastWord) {
       lockRef.current = false
       setWordIndex(i => i + 1)
@@ -78,6 +112,16 @@ export default function GameBoard({ unit, onBack, onComplete }) {
       const idToUse = unit.docId || unit.id
       onComplete(idToUse, newResults)
     }
+  }
+
+  // 中途退出
+  function handleEndEarly() {
+    if (results.length === 0) {
+      onBack();
+      return;
+    }
+    const idToUse = unit.docId || unit.id;
+    onComplete(idToUse, results);
   }
 
   // ── Handwriting handlers ──────────────────────────────────────────
@@ -95,10 +139,14 @@ export default function GameBoard({ unit, onBack, onComplete }) {
 
     try {
       const candidates = await recognizeFromStrokes(strokes, 320, 320)
-      const expected   = word.characters[activeCharIndex]
+      
+      const mainChar = word.characters[activeCharIndex]
+      const altCharsStr = (word.altCharacters && word.altCharacters[activeCharIndex]) || ''
+      const altChars = altCharsStr.split(/[ ,，]+/).filter(Boolean)
+      const allowed = [mainChar, ...altChars]
 
-      if (checkAnswerInCandidates(candidates, expected, 3)) {
-        handleCorrect(strokes)           // lock released inside handleCorrect timeout
+      if (checkAnswerInCandidates(candidates, allowed, 1)) {
+        handleCorrect(strokes)
       } else {
         const newAttempts = attempts + 1
         setAttempts(newAttempts)
@@ -200,6 +248,13 @@ export default function GameBoard({ unit, onBack, onComplete }) {
       <div className="game-header">
         <button className="btn-back" onClick={onBack}>← 返回</button>
         <span className="unit-label">{unit.name}</span>
+        <button 
+          className="btn-end-early" 
+          onClick={handleEndEarly}
+          style={{ fontSize: '0.8rem', padding: '6px 12px', background: '#ffeef0', color: '#d93a49', border: '1px solid #ffccc7' }}
+        >
+          結束練習
+        </button>
         <span className="progress-label">{wordIndex + 1} / {totalWords}</span>
       </div>
 

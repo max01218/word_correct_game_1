@@ -118,17 +118,23 @@ function SyllablePicker({ value, onChange, onClose }) {
 }
 
 // One row per character in the word
-export default function ZhuyinPicker({ characters, zhuyin, onChange }) {
+export default function ZhuyinPicker({ characters, zhuyin, altZhuyin, onChange, onAltChange }) {
   const [openIndex, setOpenIndex] = useState(null)
 
   const len = characters ? [...characters].length : 0
-  // Pad/trim zhuyin array to match character count
-  const safeZhuyin = Array.from({ length: len }, (_, i) => zhuyin[i] || '')
+  const safeZhuyin    = Array.from({ length: len }, (_, i) => zhuyin[i]    || '')
+  const safeAltZhuyin = Array.from({ length: len }, (_, i) => (altZhuyin && altZhuyin[i]) || '')
 
   function handleChange(index, value) {
     const updated = [...safeZhuyin]
     updated[index] = value
     onChange(updated)
+  }
+
+  function handleAltChange(index, value) {
+    const updated = [...safeAltZhuyin]
+    updated[index] = value
+    onAltChange(updated)
   }
 
   if (len === 0) {
@@ -153,6 +159,14 @@ export default function ZhuyinPicker({ characters, zhuyin, onChange }) {
           >
             {safeZhuyin[i] || '選取'}
           </button>
+          {/* Alt zhuyin input */}
+          <input 
+            placeholder="多音字"
+            value={safeAltZhuyin[i]}
+            onChange={e => handleAltChange(i, e.target.value)}
+            style={{ width: '64px', fontSize: '0.65rem', padding: '2px', textAlign: 'center', border: '1px solid #ddd', borderRadius: '4px' }}
+            title="可填入多個答案，以逗號分隔"
+          />
         </div>
       ))}
 
