@@ -22,13 +22,36 @@ export default function GameBoard({ unit, onBack, onComplete }) {
   const word       = unit.words[wordIndex]
   const wordType   = word.type || 'handwriting'
   const totalWords = unit.words.length
-  const isLastChar = charIndex === word.characters.length - 1
-  const isLastWord = wordIndex === totalWords - 1
+
+  const quizIndices = useMemo(() => {
+    if (word.quizIndices && word.quizIndices.length > 0) {
+      return word.quizIndices;
+    }
+    return Array.from({ length: word.characters.length }, (_, i) => i);
+  }, [word]);
+
+  const activeCharIndex = quizIndices[charIndex];
+  const isLastChar      = charIndex === quizIndices.length - 1;
+  const isLastWord      = wordIndex === totalWords - 1;
 
   const allUnitZhuyin = useMemo(
     () => unit.words.flatMap(w => w.zhuyin || []),
     [unit]
   )
+
+  // Initialize revealedChars when word changes
+  useEffect(() => {
+    const nonQuizIndices = [];
+    for (let i = 0; i < word.characters.length; i++) {
+      if (!quizIndices.includes(i)) {
+        nonQuizIndices.push(i);
+      }
+    }
+    setRevealedChars(nonQuizIndices);
+    setWordStrokes(new Array(word.characters.length).fill(undefined));
+    setWordZhuyinResult(new Array(word.characters.length).fill(undefined));
+  }, [word, quizIndices]);
+
 
   useEffect(() => {
     initHanziLookup()
@@ -45,14 +68,15 @@ export default function GameBoard({ unit, onBack, onComplete }) {
       lockRef.current = false
       setWordIndex(i => i + 1)
       setCharIndex(0)
-      setRevealedChars([])
+      // revealedChars will be handled by useEffect
       setAttempts(0)
       setWordStrokes([])
       setWordZhuyinResult([])
       setStatus('idle')
       setFeedback('')
     } else {
-      onComplete(unit.id, newResults)
+      const idToUse = unit.docId || unit.id
+      onComplete(idToUse, newResults)
     }
   }
 
@@ -71,7 +95,7 @@ export default function GameBoard({ unit, onBack, onComplete }) {
 
     try {
       const candidates = await recognizeFromStrokes(strokes, 320, 320)
-      const expected   = word.characters[charIndex]
+      const expected   = word.characters[activeCharIndex]
 
       if (checkAnswerInCandidates(candidates, expected, 3)) {
         handleCorrect(strokes)           // lock released inside handleCorrect timeout
@@ -84,8 +108,9 @@ export default function GameBoard({ unit, onBack, onComplete }) {
           setFeedback('已達3次，自動跳過')
           setTimeout(() => {
             canvasRef.current?.clear()
-            const newWordStrokes = [...wordStrokes, null]
             if (!isLastChar) {
+              const newWordStrokes = [...wordStrokes]
+              newWordStrokes[activeCharIndex] = null
               setWordStrokes(newWordStrokes)
               // do NOT add to revealedChars — skipped chars stay blank
               setCharIndex(i => i + 1)
@@ -94,7 +119,9 @@ export default function GameBoard({ unit, onBack, onComplete }) {
               setFeedback('')
               lockRef.current = false    // release for next char
             } else {
-              finishWord({ ...word, handwrittenStrokes: newWordStrokes })
+              const newWordStrokesFinal = [...wordStrokes]
+              newWordStrokesFinal[activeCharIndex] = null
+              finishWord({ ...word, handwrittenStrokes: newWordStrokesFinal })
               // finishWord releases lock internally
             }
           }, 1500)
@@ -126,9 +153,10 @@ export default function GameBoard({ unit, onBack, onComplete }) {
   function handleCorrect(currentStrokes) {
     setStatus('correct')
     setFeedback('正確！')
-    const newRevealed    = [...revealedChars, charIndex]
+    const newRevealed    = [...revealedChars, activeCharIndex]
     setRevealedChars(newRevealed)
-    const newWordStrokes = [...wordStrokes, currentStrokes]
+    const newWordStrokes = [...wordStrokes]
+    newWordStrokes[activeCharIndex] = currentStrokes
     setWordStrokes(newWordStrokes)
 
     setTimeout(() => {
@@ -140,7 +168,9 @@ export default function GameBoard({ unit, onBack, onComplete }) {
         setFeedback('')
         lockRef.current = false          // release for next char
       } else {
-        finishWord({ ...word, handwrittenStrokes: newWordStrokes })
+        const finalWordStrokes = [...wordStrokes]
+        finalWordStrokes[activeCharIndex] = currentStrokes
+        finishWord({ ...word, handwrittenStrokes: finalWordStrokes })
       }
     }, 1200)
   }
@@ -148,12 +178,17 @@ export default function GameBoard({ unit, onBack, onComplete }) {
   // ── Zhuyin-select handler ─────────────────────────────────────────
 
   function handleZhuyinAdvance(isCorrect) {
-    const newResult = [...wordZhuyinResult, isCorrect]
+    const newResult = [...wordZhuyinResult]
+    newResult[activeCharIndex] = isCorrect
     if (!isLastChar) {
       setWordZhuyinResult(newResult)
       setCharIndex(i => i + 1)
     } else {
-      const resultZhuyin = (word.zhuyin || []).map((z, i) => newResult[i] ? z : '')
+      const resultZhuyin = (word.zhuyin || []).map((z, i) => {
+        // If it was a quiz char, use result. If not, use original.
+        if (!quizIndices.includes(i)) return z; 
+        return newResult[i] ? z : ''; 
+      })
       finishWord({ ...word, zhuyin: resultZhuyin, handwrittenStrokes: [] })
     }
   }
@@ -180,7 +215,8 @@ export default function GameBoard({ unit, onBack, onComplete }) {
         <>
           <QuestionDisplay
             word={word}
-            activeCharIndex={charIndex}
+            quizIndices={quizIndices}
+            activeCharIndex={activeCharIndex}
             revealedChars={revealedChars}
           />
 
@@ -209,7 +245,7 @@ export default function GameBoard({ unit, onBack, onComplete }) {
         <ZhuyinSelectQuestion
           key={`${wordIndex}-${charIndex}`}
           word={word}
-          charIndex={charIndex}
+          charIndex={activeCharIndex}
           allUnitZhuyin={allUnitZhuyin}
           onAdvance={handleZhuyinAdvance}
         />

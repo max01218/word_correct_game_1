@@ -1,4 +1,4 @@
-import { collection, getDocs, doc, setDoc, deleteDoc, addDoc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc, addDoc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 const COLLECTION_NAME = 'wordBanks';
@@ -31,4 +31,27 @@ export const saveWordBank = async (unitId, unitData) => {
 export const deleteWordBank = async (unitId) => {
   const docRef = doc(db, COLLECTION_NAME, unitId);
   await deleteDoc(docRef);
+};
+
+// 取得使用者完成進度
+export const getUserProgress = async (userId) => {
+  if (!userId) return {};
+  const dRef = doc(db, 'userProgress', userId);
+  const dSnap = await getDoc(dRef);
+  if (dSnap.exists()) {
+    return dSnap.data().completedUnits || {};
+  }
+  return {};
+};
+
+// 儲存使用者完成進度
+export const saveUserProgress = async (userId, unitId) => {
+  if (!userId || !unitId) return;
+  const dRef = doc(db, 'userProgress', userId);
+  const dSnap = await getDoc(dRef);
+  
+  const currentProgress = dSnap.exists() ? dSnap.data().completedUnits || {} : {};
+  const nextProgress = { ...currentProgress, [unitId]: true };
+  
+  await setDoc(dRef, { completedUnits: nextProgress }, { merge: true });
 };

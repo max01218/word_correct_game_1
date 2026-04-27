@@ -86,11 +86,17 @@ export default function ZhuyinSelectQuestion({ word, charIndex, onAdvance }) {
 
       {/* Word display */}
       <div className="zy-word-row">
-        {chars.map((char, i) => (
-          <div key={i} className={`zy-char-box ${i === charIndex ? 'zy-active' : i < charIndex ? 'zy-done' : ''}`}>
-            {char}
-          </div>
-        ))}
+        {chars.map((char, i) => {
+          const isQuizChar = !word.quizIndices || word.quizIndices.length === 0 || word.quizIndices.includes(i);
+          const isActive   = i === charIndex;
+          const isDone     = isQuizChar && word.quizIndices && word.quizIndices.indexOf(i) < word.quizIndices.indexOf(charIndex);
+          
+          return (
+            <div key={i} className={`zy-char-box ${isActive ? 'zy-active' : isDone ? 'zy-done' : !isQuizChar ? 'zy-context' : ''}`}>
+              {char}
+            </div>
+          );
+        })}
       </div>
 
       <p className="zy-prompt">

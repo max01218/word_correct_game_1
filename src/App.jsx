@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from './context/AuthContext'
-import { getWordBanks, saveWordBank } from './services/dbApi'
+import { getWordBanks, saveWordBank, getUserProgress, saveUserProgress } from './services/dbApi'
 import { wordBank as fallbackData } from './data/wordBank' // For initial seed
 import UnitSelector from './components/UnitSelector'
 import GameBoard    from './components/GameBoard'
 import ResultSheet  from './components/ResultSheet'
 import TeacherDashboard from './components/TeacherDashboard'
 
-function loadCompleted() {
+// Deprecated: Moving to Firebase
+function loadCompletedLocal() {
   try { return JSON.parse(localStorage.getItem('completedUnits') || '{}') }
   catch { return {} }
 }
@@ -19,7 +20,7 @@ export default function App() {
   const [loading, setLoading] = useState(true)
 
   const [selectedUnit,  setSelectedUnit]  = useState(null)
-  const [completedUnits, setCompletedUnits] = useState(loadCompleted)
+  const [completedUnits, setCompletedUnits] = useState({})
   
   // view: 'select' | 'game' | 'result' | 'teacher_dashboard'
   const [view,    setView]    = useState('select')
@@ -32,6 +33,10 @@ export default function App() {
         setLoading(true)
         const dbUnits = await getWordBanks();
         setUnits(dbUnits);
+        
+        // Also load user progress from Firebase
+        const progress = await getUserProgress(currentUser.uid);
+        setCompletedUnits(progress);
       } catch (err) {
         console.error('Failed to load word banks from Firebase:', err);
       } finally {
@@ -63,10 +68,20 @@ export default function App() {
     setView('game')
   }
 
-  function handleComplete(unitId, unitResults) {
+  async function handleComplete(unitId, unitResults) {
     const next = { ...completedUnits, [unitId]: true }
     setCompletedUnits(next)
+    
+    // Save to Firebase
+    try {
+      await saveUserProgress(currentUser.uid, unitId);
+    } catch (err) {
+      console.error('Failed to save progress to Firebase:', err);
+    }
+    
+    // Also keep local as backup
     localStorage.setItem('completedUnits', JSON.stringify(next))
+    
     setResults(unitResults)
     setView('result')
   }

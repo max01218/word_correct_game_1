@@ -79,7 +79,7 @@ export default function TeacherDashboard({ units, onUpdate }) {
   const addWord = () => {
     setActiveUnit({
       ...activeUnit,
-      words: [...activeUnit.words, { characters: '', zhuyin: [], type: 'handwriting' }]
+      words: [...activeUnit.words, { characters: '', zhuyin: [], quizIndices: [], type: 'handwriting' }]
     });
   };
 
@@ -184,17 +184,60 @@ export default function TeacherDashboard({ units, onUpdate }) {
                   </div>
                 </div>
 
-                {/* Row 2: character input */}
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
-                  <label style={{ flex: 1 }}>
+                {/* Row 2: character input & quiz selection */}
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                  <label style={{ flex: 1, minWidth: '150px' }}>
                     <span style={{ fontSize: '0.85rem', color: '#555' }}>漢字</span>
                     <input
                       value={w.characters}
-                      onChange={e => updateWord(index, 'characters', e.target.value)}
+                      onChange={e => {
+                        const val = e.target.value;
+                        updateWord(index, 'characters', val);
+                        // Reset quizIndices if characters change length significantly or just keep it simple
+                      }}
                       placeholder="如：雄偉"
                       style={{ display: 'block', width: '100%', padding: '6px', marginTop: '4px' }}
                     />
                   </label>
+
+                  <div style={{ flex: 2, minWidth: '200px' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#555' }}>點選測驗範圍 (藍色為考試，灰色為標示)</span>
+                    <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
+                      {Array.from(w.characters || '').map((char, charIdx) => {
+                        const isActive = !w.quizIndices || w.quizIndices.length === 0 || w.quizIndices.includes(charIdx);
+                        return (
+                          <button
+                            key={charIdx}
+                            onClick={() => {
+                              let newIndices = w.quizIndices ? [...w.quizIndices] : Array.from({ length: w.characters.length }, (_, i) => i);
+                              if (newIndices.includes(charIdx)) {
+                                newIndices = newIndices.filter(i => i !== charIdx);
+                              } else {
+                                newIndices.push(charIdx);
+                                newIndices.sort((a, b) => a - b);
+                              }
+                              updateWord(index, 'quizIndices', newIndices);
+                            }}
+                            style={{
+                              width: '36px',
+                              height: '36px',
+                              borderRadius: '4px',
+                              border: isActive ? '2px solid #3a5bd9' : '1px solid #ddd',
+                              background: isActive ? '#e8eeff' : '#f5f5f5',
+                              color: isActive ? '#3a5bd9' : '#999',
+                              fontWeight: isActive ? 700 : 400,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            {char || '?'}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
 
                 {/* Row 3: zhuyin picker */}

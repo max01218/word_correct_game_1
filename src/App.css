@@ -157,9 +157,9 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 }
 
 .zhuyin-box.revealed .char-slot {
-  border-color: #52c41a;
-  color: #2a7a00;
-  background: #f0fff4;
+  border-color: #3a5bd9;
+  color: #3a5bd9;
+  background: #f8faff;
 }
 
 /* ─── Hint Box ───────────────────────────────────────────── */
@@ -336,6 +336,12 @@ button:disabled { opacity: .45; cursor: not-allowed; }
   border-color: #52c41a;
   background: #f0fff4;
   color: #2a7a00;
+}
+.zy-char-box.zy-context {
+  border-color: #eee;
+  background: #fafafa;
+  color: #bbb;
+  border-style: dashed;
 }
 
 .zy-prompt { font-size: .95rem; color: #555; margin: 0; }
