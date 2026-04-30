@@ -65,39 +65,37 @@ export async function submitToClassroom(unit, results) {
     )
     const { id: fileId } = await uploadRes.json()
 
-    // Step 2: 提交到 Classroom
+    // Step 2: 取得繳交 ID
     const subRes = await fetch(
       `https://classroom.googleapis.com/v1/courses/${COURSE_ID}/courseWork/${WORK_ID}/studentSubmissions?userId=me`,
-      {
-        method: 'GET',
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }
+      { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` } }
     )
+    if (!subRes.ok) throw new Error('無法取得繳交資料')
     const subData = await subRes.json()
     const submission = subData.studentSubmissions?.[0]
-    if (!submission) return { success: false, message: '找不到對應的作業，請確認課程 ID 與作業 ID' }
+    if (!submission) return { success: false, message: '找不到對應的作業' }
 
-    // 修改提交內容（加入附件）
-    await fetch(
-      `https://classroom.googleapis.com/v1/courses/${COURSE_ID}/courseWork/${WORK_ID}/studentSubmissions/${submission.id}?updateMask=assignmentSubmission`,
+    // 掛載附件（使用 modifyAttachments）
+    const attachRes = await fetch(
+      `https://classroom.googleapis.com/v1/courses/${COURSE_ID}/courseWork/${WORK_ID}/studentSubmissions/${submission.id}:modifyAttachments`,
       {
-        method: 'PATCH',
+        method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          assignmentSubmission: {
-            attachments: [{ driveFile: { id: fileId } }],
-          },
+          addAttachments: [{ driveFile: { id: fileId } }],
         }),
       }
     )
+    if (!attachRes.ok) throw new Error('掛載附件失敗')
 
-    // 提交
-    await fetch(
+    // Step 3: 提交 (turnIn)
+    const turnInRes = await fetch(
       `https://classroom.googleapis.com/v1/courses/${COURSE_ID}/courseWork/${WORK_ID}/studentSubmissions/${submission.id}:turnIn`,
       { method: 'POST', headers: { Authorization: `Bearer ${accessToken}` } }
     )
+    if (!turnInRes.ok) throw new Error('繳交作業失敗')
 
-    return { success: true, message: '已成功傳送至 Google Classroom！老師將會收到通知。' }
+    return { success: true, message: '已成功傳送至 Google Classroom！' }
   } catch (err) {
     return { success: false, message: `傳送失敗：${err.message}` }
   }
