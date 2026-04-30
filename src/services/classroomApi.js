@@ -101,18 +101,19 @@ export async function submitToClassroom(unit, results) {
   }
 }
 
-export async function setupNewAssignment() {
+export async function setupNewAssignment(unit) {
   try {
     if (!accessToken) await signIn()
 
+    const appUrl = window.location.origin
     const response = await fetch(
       `https://classroom.googleapis.com/v1/courses/${COURSE_ID}/courseWork`,
       {
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: '字音字形練習 - 完成單繳交',
-          description: '請完成字音字形練習，系統會自動幫你繳交完成單。',
+          title: `字音字形練習 ─ ${unit?.name || '練習'}`,
+          description: `請點擊以下連結完成練習，系統會自動幫你繳交完成單。\n\n${appUrl}`,
           workType: 'ASSIGNMENT',
           state: 'PUBLISHED',
           maxPoints: 100,

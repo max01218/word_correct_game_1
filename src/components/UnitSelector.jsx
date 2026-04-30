@@ -1,4 +1,6 @@
-export default function UnitSelector({ units, completedUnits, onSelect, onSeed, isTeacher }) {
+import { isConfigured } from '../services/classroomApi'
+
+export default function UnitSelector({ units, completedUnits, onSelect, onSeed, isTeacher, onSetupAssignment }) {
   return (
     <div className="unit-selector">
       <div className="selector-header">
@@ -26,6 +28,14 @@ export default function UnitSelector({ units, completedUnits, onSelect, onSeed, 
                 共 {unit.words?.length || 0} 個詞彙
               </div>
               {done && <div className="badge">✓ 已完成</div>}
+              {isTeacher && isConfigured() && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onSetupAssignment(unit) }}
+                  style={{ marginTop: '8px', fontSize: '0.75rem', padding: '4px 10px', background: '#4caf50', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  📤 發布至 Classroom
+                </button>
+              )}
             </div>
           )
         })}

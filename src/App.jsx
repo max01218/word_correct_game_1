@@ -6,6 +6,7 @@ import {
 } from './services/dbApi'
 import { wordBank as fallbackData } from './data/wordBank' // For initial seed
 import UnitSelector from './components/UnitSelector'
+import { setupNewAssignment } from './services/classroomApi'
 import GameBoard    from './components/GameBoard'
 import ResultSheet  from './components/ResultSheet'
 import TeacherDashboard from './components/TeacherDashboard'
@@ -202,6 +203,7 @@ export default function App() {
           onSelect={handleSelectUnit}
           onSeed={handleSeedData}
           isTeacher={isTeacher}
+          onSetupAssignment={setupNewAssignment}
         />
       )}
       {view === 'game' && (
