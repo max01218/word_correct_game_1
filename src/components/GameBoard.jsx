@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import QuestionDisplay from './QuestionDisplay'
 import HandwritingCanvas from './HandwritingCanvas'
 import ZhuyinSelectQuestion from './ZhuyinSelectQuestion'
-import { initHanziLookup, recognizeFromStrokes, recognizeWithLocalEngine, checkAnswerInCandidates } from '../services/visionApi'
+import { initHanziLookup, recognizeFromStrokes, checkAnswerInCandidates } from '../services/visionApi'
 import { useAuth } from '../context/AuthContext'
 import { addMistake, removeMistake, savePartialResults } from '../services/dbApi'
 
