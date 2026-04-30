@@ -54,7 +54,7 @@ export async function submitToClassroom(unit, results) {
     // Step 1: 上傳 HTML 到 Google Drive
     const html  = await generateSheetHTML(unit, results)
     const blob  = new Blob([html], { type: 'text/html' })
-    const meta  = JSON.stringify({ name: `${unit.name}_完成單`, mimeType: 'application/vnd.google-apps.document' })
+    const meta  = JSON.stringify({ name: `${unit.name}_完成單.html`, mimeType: 'text/html' })
     const form  = new FormData()
     form.append('metadata', new Blob([meta], { type: 'application/json' }))
     form.append('file', blob)
