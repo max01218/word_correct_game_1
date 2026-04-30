@@ -127,7 +127,20 @@ export async function setupNewAssignment(unit) {
     }
 
     const newWork = await response.json()
-    alert(`✅ 作業建立成功！\n新的 Coursework ID：${newWork.id}\n\n請複製這串 ID 去更新 Vercel 的 VITE_CLASSROOM_COURSEWORK_ID`)
+
+    // 自動更新 Vercel 環境變數並觸發 rebuild
+    const updateRes = await fetch('/api/update-coursework', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ courseworkId: newWork.id })
+    })
+
+    if (updateRes.ok) {
+      alert(`✅ 作業「${unit?.name}」已發布！\n系統正在自動重新部署（約 30-60 秒），完成後學生即可使用。`)
+    } else {
+      alert(`✅ 作業已建立，但自動部署失敗。\n請手動將此 ID 更新至 Vercel：\n${newWork.id}`)
+    }
+
     console.log('新 Coursework ID:', newWork.id)
     return newWork.id
   } catch (err) {
