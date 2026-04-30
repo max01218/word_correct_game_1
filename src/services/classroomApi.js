@@ -203,7 +203,9 @@ function generateSheetCanvas(unit, results) {
     const chars       = Array.from(word.characters)
     const zhuyins     = word.zhuyin || []
     const strokesArr  = word.handwrittenStrokes || []
-    const quizIndices = word.quizIndices || chars.map((_, i) => i)
+    const quizIndices = (word.quizIndices && word.quizIndices.length > 0)
+      ? word.quizIndices
+      : chars.map((_, i) => i)
 
     chars.forEach((char, ci) => {
       const cellX   = cardX + CARD_PAD + ci * (CELL + PAD)
