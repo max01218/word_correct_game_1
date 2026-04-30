@@ -67,7 +67,7 @@ export async function submitToClassroom(unit, results) {
 
     // Step 2: 提交到 Classroom
     const subRes = await fetch(
-      `https://classroom.googleapis.com/v1/courses/${COURSE_ID}/courseWork/${WORK_ID}/studentSubmissions`,
+      `https://classroom.googleapis.com/v1/courses/${COURSE_ID}/courseWork/${WORK_ID}/studentSubmissions?userId=me`,
       {
         method: 'GET',
         headers: { Authorization: `Bearer ${accessToken}` },
