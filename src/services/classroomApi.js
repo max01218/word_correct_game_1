@@ -52,7 +52,7 @@ export async function submitToClassroom(unit, results) {
     if (!accessToken) await signIn()
 
     // Step 1: 上傳 HTML 到 Google Drive
-    const html  = generateSheetHTML(unit, results)
+    const html  = await generateSheetHTML(unit, results)
     const blob  = new Blob([html], { type: 'text/html' })
     const meta  = JSON.stringify({ name: `${unit.name}_完成單`, mimeType: 'application/vnd.google-apps.document' })
     const form  = new FormData()
@@ -135,32 +135,74 @@ export async function setupNewAssignment() {
   }
 }
 
-function generateSheetHTML(unit, results) {
-  const rows = results
-    .map(
-      (w) =>
-        `<tr>
-          <td style="font-size:28px;padding:8px 16px">${w.characters}</td>
-          <td style="font-size:18px;padding:8px 16px;color:#555">${w.zhuyin.join('　')}</td>
-        </tr>`
-    )
-    .join('')
+function renderStrokesToDataURL(strokes) {
+  if (!strokes || strokes.length === 0) return null
+  const size = 160
+  const c = document.createElement('canvas')
+  c.width = c.height = size
+  const ctx = c.getContext('2d')
+  ctx.fillStyle = '#fff'
+  ctx.fillRect(0, 0, size, size)
+  ctx.strokeStyle = '#1a1a1a'
+  ctx.lineWidth = 3
+  ctx.lineCap = ctx.lineJoin = 'round'
+  const scale = size / 320
+  for (const stroke of strokes) {
+    if (!stroke || stroke.length < 2) continue
+    ctx.beginPath()
+    ctx.moveTo(stroke[0][0] * scale, stroke[0][1] * scale)
+    for (let i = 1; i < stroke.length; i++) ctx.lineTo(stroke[i][0] * scale, stroke[i][1] * scale)
+    ctx.stroke()
+  }
+  return c.toDataURL('image/png')
+}
+
+async function generateSheetHTML(unit, results) {
+  const cards = results.map((word) => {
+    const chars = Array.from(word.characters)
+    const zhuyins = word.zhuyin || []
+    const strokesArr = word.handwrittenStrokes || []
+    const quizIndices = word.quizIndices || chars.map((_, i) => i)
+
+    const cells = chars.map((char, i) => {
+      const isQuiz = quizIndices.includes(i)
+      const strokes = strokesArr[i]
+
+      let inner
+      if (!isQuiz) {
+        inner = `<div style="font-size:36px;color:#f5a623;line-height:1">${char}</div>`
+      } else if (strokes === null) {
+        inner = `<div style="font-size:36px;color:#cc0000;line-height:1">✗</div>`
+      } else if (strokes && strokes.length > 0) {
+        const img = renderStrokesToDataURL(strokes)
+        inner = img
+          ? `<img src="${img}" style="width:72px;height:72px;display:block;margin:auto"/>`
+          : `<div style="font-size:36px;line-height:1">${char}</div>`
+      } else {
+        inner = `<div style="font-size:36px;line-height:1">${char}</div>`
+      }
+
+      return `<td style="border:1px solid #ddd;width:88px;height:88px;text-align:center;vertical-align:middle;padding:4px;">
+        ${inner}
+        <div style="font-size:12px;color:#888;margin-top:2px">${zhuyins[i] || ''}</div>
+      </td>`
+    }).join('')
+
+    return `<div style="display:inline-block;margin:8px;border:2px solid #e0e0e0;border-radius:10px;padding:10px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.08)">
+      <table style="border-collapse:collapse"><tr>${cells}</tr></table>
+    </div>`
+  }).join('\n')
 
   return `<!DOCTYPE html>
-<html lang="zh-TW">
-<head><meta charset="UTF-8"><title>${unit.name} 完成單</title></head>
-<body style="font-family:'Microsoft JhengHei',sans-serif;padding:32px">
-  <h2 style="color:#333">字音字形練習 ─ ${unit.name} 完成單</h2>
-  <p style="color:#888">主題：${unit.theme}</p>
-  <table border="1" cellspacing="0" style="border-collapse:collapse;margin-top:16px">
-    <thead>
-      <tr style="background:#eee">
-        <th style="padding:8px 16px">詞彙</th>
-        <th style="padding:8px 16px">注音</th>
-      </tr>
-    </thead>
-    <tbody>${rows}</tbody>
-  </table>
-</body>
-</html>`
+<html lang="zh-TW"><head>
+  <meta charset="UTF-8">
+  <title>${unit.name} 完成單</title>
+</head>
+<body style="font-family:'Microsoft JhengHei','PingFang TC',sans-serif;padding:32px;background:#f5f5f5">
+  <h2 style="color:#333;margin-bottom:4px">🎉 字音字形練習 ─ ${unit.name} 完成單</h2>
+  <p style="color:#888;margin-top:0">主題：${unit.theme}　｜　完成 ${results.length} 詞</p>
+  <div style="display:flex;flex-wrap:wrap;gap:4px">
+    ${cards}
+  </div>
+</body></html>`
 }
