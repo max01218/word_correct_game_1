@@ -10,7 +10,7 @@
 const CLIENT_ID   = import.meta.env.VITE_GOOGLE_CLIENT_ID
 const COURSE_ID   = import.meta.env.VITE_CLASSROOM_COURSE_ID
 const WORK_ID     = import.meta.env.VITE_CLASSROOM_COURSEWORK_ID
-const SCOPE       = 'https://www.googleapis.com/auth/classroom.coursework.me https://www.googleapis.com/auth/drive.file'
+const SCOPE       = 'https://www.googleapis.com/auth/classroom.coursework.me https://www.googleapis.com/auth/classroom.coursework.admins https://www.googleapis.com/auth/drive.file'
 
 let accessToken = null
 
@@ -98,6 +98,40 @@ export async function submitToClassroom(unit, results) {
     return { success: true, message: '已成功傳送至 Google Classroom！' }
   } catch (err) {
     return { success: false, message: `傳送失敗：${err.message}` }
+  }
+}
+
+export async function setupNewAssignment() {
+  try {
+    if (!accessToken) await signIn()
+
+    const response = await fetch(
+      `https://classroom.googleapis.com/v1/courses/${COURSE_ID}/courseWork`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: '字音字形練習 - 完成單繳交',
+          description: '請完成字音字形練習，系統會自動幫你繳交完成單。',
+          workType: 'ASSIGNMENT',
+          state: 'PUBLISHED',
+          maxPoints: 100,
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      const err = await response.json()
+      throw new Error(JSON.stringify(err))
+    }
+
+    const newWork = await response.json()
+    alert(`✅ 作業建立成功！\n新的 Coursework ID：${newWork.id}\n\n請複製這串 ID 去更新 Vercel 的 VITE_CLASSROOM_COURSEWORK_ID`)
+    console.log('新 Coursework ID:', newWork.id)
+    return newWork.id
+  } catch (err) {
+    alert(`建立失敗：${err.message}`)
+    console.error(err)
   }
 }
 

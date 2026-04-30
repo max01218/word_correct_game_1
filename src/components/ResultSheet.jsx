@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { submitToClassroom, isConfigured } from '../services/classroomApi'
+import { submitToClassroom, isConfigured, setupNewAssignment } from '../services/classroomApi'
 import RubyGridWord from './RubyGridWord'
 
 export default function ResultSheet({ unit, results, onBack }) {
@@ -51,6 +51,16 @@ export default function ResultSheet({ unit, results, onBack }) {
         <button className="btn-back-menu" onClick={onBack}>
           返回選單
         </button>
+
+        {isConfigured() && (
+          <button
+            className="btn-back-menu"
+            style={{ fontSize: '0.75rem', opacity: 0.5 }}
+            onClick={setupNewAssignment}
+          >
+            🔧 建立新作業（老師用）
+          </button>
+        )}
       </div>
 
       {!isConfigured() && (
