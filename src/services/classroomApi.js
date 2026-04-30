@@ -51,10 +51,10 @@ export async function submitToClassroom(unit, results) {
   try {
     if (!accessToken) await signIn()
 
-    // Step 1: 上傳 HTML 到 Google Drive
-    const html  = await generateSheetHTML(unit, results)
-    const blob  = new Blob([html], { type: 'text/html' })
-    const meta  = JSON.stringify({ name: `${unit.name}_完成單.html`, mimeType: 'text/html' })
+    // Step 1: 渲染完成單為 PNG 並上傳至 Google Drive
+    const canvas = generateSheetCanvas(unit, results)
+    const blob   = await new Promise(r => canvas.toBlob(r, 'image/png'))
+    const meta   = JSON.stringify({ name: `${unit.name}_完成單.png`, mimeType: 'image/png' })
     const form  = new FormData()
     form.append('metadata', new Blob([meta], { type: 'application/json' }))
     form.append('file', blob)
@@ -149,74 +149,114 @@ export async function setupNewAssignment(unit) {
   }
 }
 
-function renderStrokesToDataURL(strokes) {
-  if (!strokes || strokes.length === 0) return null
-  const size = 160
-  const c = document.createElement('canvas')
-  c.width = c.height = size
-  const ctx = c.getContext('2d')
-  ctx.fillStyle = '#fff'
-  ctx.fillRect(0, 0, size, size)
-  ctx.strokeStyle = '#1a1a1a'
-  ctx.lineWidth = 3
-  ctx.lineCap = ctx.lineJoin = 'round'
-  const scale = size / 320
-  for (const stroke of strokes) {
-    if (!stroke || stroke.length < 2) continue
-    ctx.beginPath()
-    ctx.moveTo(stroke[0][0] * scale, stroke[0][1] * scale)
-    for (let i = 1; i < stroke.length; i++) ctx.lineTo(stroke[i][0] * scale, stroke[i][1] * scale)
-    ctx.stroke()
-  }
-  return c.toDataURL('image/png')
-}
+function generateSheetCanvas(unit, results) {
+  const FONT     = '"Microsoft JhengHei","PingFang TC",sans-serif'
+  const CELL     = 140   // 每個字的格子大小
+  const ZHUYIN   = 24    // 注音區高度
+  const PAD      = 10    // 格子間距
+  const CARD_PAD = 12    // 卡片內邊距
+  const MARGIN   = 20    // 畫布邊距
+  const HEADER   = 80    // 標題區高度
+  const PER_ROW  = 4     // 每行最多幾個詞
 
-async function generateSheetHTML(unit, results) {
-  const cards = results.map((word) => {
-    const chars = Array.from(word.characters)
-    const zhuyins = word.zhuyin || []
-    const strokesArr = word.handwrittenStrokes || []
+  const maxChars = Math.max(...results.map(w => Array.from(w.characters).length), 1)
+  const cardW = maxChars * (CELL + PAD) - PAD + CARD_PAD * 2
+  const cardH = CELL + ZHUYIN + CARD_PAD * 2
+  const cols  = Math.min(results.length, PER_ROW)
+  const rows  = Math.ceil(results.length / PER_ROW)
+
+  const canvasW = cols * cardW + (cols - 1) * MARGIN + MARGIN * 2
+  const canvasH = HEADER + rows * cardH + (rows - 1) * MARGIN + MARGIN * 2
+
+  const c = document.createElement('canvas')
+  c.width = canvasW
+  c.height = canvasH
+  const ctx = c.getContext('2d')
+
+  // 背景
+  ctx.fillStyle = '#f5f5f5'
+  ctx.fillRect(0, 0, canvasW, canvasH)
+
+  // 標題
+  ctx.fillStyle = '#333'
+  ctx.font = `bold 26px ${FONT}`
+  ctx.fillText(`字音字形練習 ― ${unit.name} 完成單`, MARGIN, MARGIN + 30)
+  ctx.fillStyle = '#888'
+  ctx.font = `16px ${FONT}`
+  ctx.fillText(`主題：${unit.theme}　｜　完成 ${results.length} 詞`, MARGIN, MARGIN + 58)
+
+  results.forEach((word, wi) => {
+    const col   = wi % PER_ROW
+    const row   = Math.floor(wi / PER_ROW)
+    const cardX = MARGIN + col * (cardW + MARGIN)
+    const cardY = HEADER + MARGIN + row * (cardH + MARGIN)
+
+    // 卡片背景
+    ctx.fillStyle = '#fff'
+    ctx.strokeStyle = '#e0e0e0'
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.roundRect(cardX, cardY, cardW, cardH, 8)
+    ctx.fill()
+    ctx.stroke()
+
+    const chars       = Array.from(word.characters)
+    const zhuyins     = word.zhuyin || []
+    const strokesArr  = word.handwrittenStrokes || []
     const quizIndices = word.quizIndices || chars.map((_, i) => i)
 
-    const cells = chars.map((char, i) => {
-      const isQuiz = quizIndices.includes(i)
-      const strokes = strokesArr[i]
+    chars.forEach((char, ci) => {
+      const cellX   = cardX + CARD_PAD + ci * (CELL + PAD)
+      const cellY   = cardY + CARD_PAD
+      const isQuiz  = quizIndices.includes(ci)
+      const strokes = strokesArr[ci]
 
-      let inner
+      // 格子背景 + 邊框
+      ctx.fillStyle = '#fff'
+      ctx.fillRect(cellX, cellY, CELL, CELL)
+      ctx.strokeStyle = '#ddd'
+      ctx.lineWidth = 1
+      ctx.strokeRect(cellX, cellY, CELL, CELL)
+
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+
       if (!isQuiz) {
-        inner = `<div style="font-size:36px;color:#f5a623;line-height:1">${char}</div>`
+        // 非考題：橘色文字
+        ctx.fillStyle = '#f5a623'
+        ctx.font = `${CELL * 0.55}px ${FONT}`
+        ctx.fillText(char, cellX + CELL / 2, cellY + CELL / 2)
       } else if (strokes === null) {
-        inner = `<div style="font-size:36px;color:#cc0000;line-height:1">✗</div>`
+        // 跳過：紅色 X
+        ctx.fillStyle = '#cc0000'
+        ctx.font = `${CELL * 0.55}px ${FONT}`
+        ctx.fillText('✗', cellX + CELL / 2, cellY + CELL / 2)
       } else if (strokes && strokes.length > 0) {
-        const img = renderStrokesToDataURL(strokes)
-        inner = img
-          ? `<img src="${img}" style="width:72px;height:72px;display:block;margin:auto"/>`
-          : `<div style="font-size:36px;line-height:1">${char}</div>`
-      } else {
-        inner = `<div style="font-size:36px;line-height:1">${char}</div>`
+        // 手寫筆劃
+        ctx.save()
+        ctx.translate(cellX, cellY)
+        const scale = CELL / 320
+        ctx.strokeStyle = '#1a1a1a'
+        ctx.lineWidth = 3
+        ctx.lineCap = ctx.lineJoin = 'round'
+        for (const stroke of strokes) {
+          if (!stroke || stroke.length < 2) continue
+          ctx.beginPath()
+          ctx.moveTo(stroke[0][0] * scale, stroke[0][1] * scale)
+          for (let i = 1; i < stroke.length; i++) ctx.lineTo(stroke[i][0] * scale, stroke[i][1] * scale)
+          ctx.stroke()
+        }
+        ctx.restore()
       }
 
-      return `<td style="border:1px solid #ddd;width:88px;height:88px;text-align:center;vertical-align:middle;padding:4px;">
-        ${inner}
-        <div style="font-size:12px;color:#888;margin-top:2px">${zhuyins[i] || ''}</div>
-      </td>`
-    }).join('')
+      // 注音
+      ctx.fillStyle = '#888'
+      ctx.font = `13px ${FONT}`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      ctx.fillText(zhuyins[ci] || '', cellX + CELL / 2, cellY + CELL + 4)
+    })
+  })
 
-    return `<div style="display:inline-block;margin:8px;border:2px solid #e0e0e0;border-radius:10px;padding:10px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.08)">
-      <table style="border-collapse:collapse"><tr>${cells}</tr></table>
-    </div>`
-  }).join('\n')
-
-  return `<!DOCTYPE html>
-<html lang="zh-TW"><head>
-  <meta charset="UTF-8">
-  <title>${unit.name} 完成單</title>
-</head>
-<body style="font-family:'Microsoft JhengHei','PingFang TC',sans-serif;padding:32px;background:#f5f5f5">
-  <h2 style="color:#333;margin-bottom:4px">🎉 字音字形練習 ─ ${unit.name} 完成單</h2>
-  <p style="color:#888;margin-top:0">主題：${unit.theme}　｜　完成 ${results.length} 詞</p>
-  <div style="display:flex;flex-wrap:wrap;gap:4px">
-    ${cards}
-  </div>
-</body></html>`
+  return c
 }
