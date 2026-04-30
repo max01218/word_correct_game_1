@@ -10,11 +10,12 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const defaultTeacherEmail = import.meta.env.VITE_TEACHER_EMAIL;
+    const teacherEmails = (import.meta.env.VITE_TEACHER_EMAIL || '')
+      .split(',').map(e => e.trim())
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       if (user) {
-        setIsTeacher(user.email === defaultTeacherEmail);
+        setIsTeacher(teacherEmails.includes(user.email));
       } else {
         setIsTeacher(false);
       }
