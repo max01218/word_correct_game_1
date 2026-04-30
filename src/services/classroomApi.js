@@ -10,7 +10,7 @@
 const CLIENT_ID   = import.meta.env.VITE_GOOGLE_CLIENT_ID
 const COURSE_ID   = import.meta.env.VITE_CLASSROOM_COURSE_ID
 const WORK_ID     = import.meta.env.VITE_CLASSROOM_COURSEWORK_ID
-const SCOPE       = 'https://www.googleapis.com/auth/classroom.coursework.me https://www.googleapis.com/auth/classroom.coursework.admins https://www.googleapis.com/auth/drive.file'
+const SCOPE       = 'https://www.googleapis.com/auth/classroom.coursework.me https://www.googleapis.com/auth/classroom.coursework.students https://www.googleapis.com/auth/drive.file'
 
 let accessToken = null
 
