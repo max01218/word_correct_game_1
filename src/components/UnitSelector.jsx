@@ -41,7 +41,6 @@ export default function UnitSelector({ units, completedUnits, onSelect, onSeed, 
         })}
       </div>
 
-      <p className="hint-text">完成單元後可直接傳送至老師的 Google Classroom</p>
     </div>
   )
 }

@@ -1,21 +1,7 @@
-import { useState, useEffect } from 'react'
-import { submitToClassroom, isConfigured } from '../services/classroomApi'
+import React from 'react'
 import RubyGridWord from './RubyGridWord'
 
 export default function ResultSheet({ unit, results, onBack }) {
-  const [submitting,    setSubmitting]    = useState(false)
-  const [submitMessage, setSubmitMessage] = useState(null)
-  const [submitOk,      setSubmitOk]      = useState(false)
-
-  async function handleSubmit() {
-    setSubmitting(true)
-    setSubmitMessage(null)
-    const res = await submitToClassroom(unit, results)
-    setSubmitting(false)
-    setSubmitMessage(res.message)
-    setSubmitOk(res.success)
-  }
-
   function handlePrint() {
     window.print()
   }
@@ -36,14 +22,6 @@ export default function ResultSheet({ unit, results, onBack }) {
       </div>
 
       <div className="result-actions">
-        <button
-          className="btn-classroom"
-          onClick={handleSubmit}
-          disabled={submitting || submitOk}
-        >
-          {submitting ? '傳送中…' : submitOk ? '已傳送 ✓' : '傳送至 Google Classroom'}
-        </button>
-
         <button className="btn-print" onClick={handlePrint}>
           列印完成單
         </button>
@@ -53,18 +31,6 @@ export default function ResultSheet({ unit, results, onBack }) {
         </button>
 
       </div>
-
-      {!isConfigured() && (
-        <p className="classroom-note">
-          ※ 尚未設定 Google Classroom 憑證（請填寫 .env），目前僅支援列印。
-        </p>
-      )}
-
-      {submitMessage && (
-        <div className={`submit-msg ${submitOk ? 'ok' : 'err'}`}>
-          {submitMessage}
-        </div>
-      )}
 
     </div>
   )
