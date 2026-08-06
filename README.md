@@ -1,77 +1,35 @@
-# 字音字形練習遊戲
+# Chinese Handwriting Practice
 
-國中二年級字音字形手寫練習，共 5 個單元、每單元 10 題。
-學生根據注音手寫對應漢字，完成後可傳送至老師的 Google Classroom。
+I built this browser-based exercise for junior-high Chinese character practice. The application contains five units with ten questions each. Students read the Zhuyin prompt, write the corresponding characters and can submit the completed work through Google Classroom.
 
----
+## Features
 
-## 環境需求
+- Five editable units with a total of fifty questions.
+- Canvas-based handwriting input.
+- Browser-side stroke matching with HanziLookupJS.
+- Immediate checking against the expected character.
+- Optional Google Classroom submission.
+- React components separated from question data and service integrations.
 
-- Node.js 18+
-- （辨識功能已改為純前端 HanziLookupJS，不再需要 Python 後端）
+## Technology
 
----
+- React and Vite
+- JavaScript
+- HanziLookupJS
+- Google Classroom integration
 
-## 首次設定
+Handwriting recognition runs in the browser, so the core exercise does not require a Python backend.
+
+## Run locally
 
 ```bash
-# 複製環境變數範本
 cp .env.example .env
-```
-
-`.env` 預設值已可直接使用（後端跑在 localhost:8000）。
-若要啟用 Google Classroom 傳送功能，請在 `.env` 中填入對應的憑證。
-
----
-
-## 啟動方式
-
-> 辨識功能已改為純前端 HanziLookupJS（筆劃比對），**不再需要啟動 Python 後端**。
-
-### 啟動前端
-
-```bash
 npm install
 npm run dev
 ```
 
-瀏覽器開啟 `http://localhost:5173` 即可開始使用。
+The development server is available at `http://localhost:5173`. Google Classroom credentials are only required when the submission feature is enabled.
 
----
+## Question data
 
-## 專案結構
-
-```
-mom_word_correct_game/
-├── public/
-│   ├── hanzilookup.min.js # HanziLookupJS 函式庫
-│   └── mmah.json          # 字元資料庫（10,657 字）
-├── src/
-│   ├── data/
-│   │   └── wordBank.js    # 5 單元 × 10 詞題庫（可自行修改）
-│   ├── services/
-│   │   ├── visionApi.js   # 呼叫本地辨識後端
-│   │   └── classroomApi.js# Google Classroom 提交
-│   └── components/        # React 元件
-├── .env.example           # 環境變數範本
-├── package.json
-└── vite.config.js
-```
-
----
-
-## 修改題庫
-
-編輯 `src/data/wordBank.js`，每個單元格式如下：
-
-```js
-{
-  id: 1,
-  name: "單元名稱",
-  theme: "主題說明",
-  words: [
-    { id: 1, characters: "雄偉", zhuyin: ["ㄒㄩㄥˊ", "ㄨㄟˇ"] },
-    // ...共 10 筆
-  ]
-}
-```
+The units are defined in `src/data/wordBank.js`, independently of the interface components. This makes it possible to replace the vocabulary or add a new unit without changing the handwriting and scoring logic.
